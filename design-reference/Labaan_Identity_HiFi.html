@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta name="design_doc_mode" content="canvas">
+<style>
+  html, body { margin: 0; background: #0e1013; }
+  a { color: oklch(0.87 0.19 126); text-decoration: none; }
+  a:hover { color: oklch(0.94 0.19 126); }
+  @keyframes lb-pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+</style>
+</helmet>
+
+<section id="turn-1" style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 32px; padding: 40px; background: radial-gradient(120% 80% at 18% 0%, rgba(255,255,255,.025), transparent 60%), #0e1013; font-family: 'IBM Plex Sans', system-ui, sans-serif; align-items: flex-start;">
+
+<!-- ============ PLAYER PROFILE — 1a ============ -->
+<div id="1a" style="display: flex; gap: 28px; align-items: flex-start;">
+  <div style="position: relative;">
+    <div style="position: absolute; top: -14px; left: -14px; z-index: 40; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .8px; padding: 4px 10px; border-radius: 4px;">1A · PLAYER PROFILE</div>
+    <div style="background: #000; border: 2px solid #2b2e37; border-radius: 46px; padding: 12px; box-shadow: 0 22px 60px rgba(0,0,0,.65);">
+      <div style="position: relative; width: 340px; height: 720px; background: #0f1116; color: #eceef2; border-radius: 34px; overflow: hidden; font-size: 13px; display: flex; flex-direction: column;">
+        <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 24px; background: #000; border-radius: 14px; z-index: 40;"></div>
+
+        <div style="flex: 0 0 auto; height: 42px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 22px 4px; font-family: 'Chakra Petch', sans-serif; font-size: 12px; font-weight: 600;">
+          <span style="font-variant-numeric: tabular-nums;">20:14</span>
+          <div style="display: flex; gap: 4px; align-items: center;"><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 20px; height: 10px; background: #969aa5; border-radius: 2px;"></span></div>
+        </div>
+
+        <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 4px 18px 8px;">
+          <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -.3px; flex: 1;">Profile</h1>
+          <div style="width: 30px; height: 30px; border: 1px solid #31353f; border-radius: 8px; display: grid; place-items: center; color: #969aa5; font-size: 12px;">⚙</div>
+        </div>
+
+        <div style="flex: 1 1 auto; overflow: hidden; position: relative;">
+          <div style="padding: 4px 18px 74px; display: flex; flex-direction: column; gap: 12px;">
+
+            <!-- identity card -->
+            <div style="position: relative; padding: 12px; background: #1a1d24; border: 1px solid #31353f; border-radius: 12px;">
+              <div style="display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: center;">
+                <div style="position: relative; width: 60px; height: 66px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center;">
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 26px; color: #eceef2; line-height: 1;">4</span>
+                </div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -.2px; line-height: 1.1;">kuya_blaze</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; letter-spacing: .3px; margin-top: 3px;">MANILA, PH · JOINED 2024</div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 8px; border-radius: 4px; border: 1px solid oklch(0.87 0.19 126); background: rgba(184,240,65,.05);">
+                    <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 10.5px; letter-spacing: .5px; text-transform: uppercase; color: oklch(0.87 0.19 126);">CHAMPION</span>
+                    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: oklch(0.87 0.19 126); letter-spacing: .5px;">GOLD</span>
+                  </div>
+                </div>
+              </div>
+              <!-- rank progress -->
+              <div style="margin-top: 10px;">
+                <div style="height: 5px; border-radius: 3px; background: #262a33; overflow: hidden;">
+                  <div style="width: 62%; height: 100%; background: linear-gradient(90deg, oklch(0.87 0.19 126), oklch(0.94 0.19 126));"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5;">
+                  <span>RANK 4 · CHAMPION</span>
+                  <span>31 / 50 <span style="color: oklch(0.87 0.19 126);">→ LEGEND</span></span>
+                </div>
+              </div>
+              <span style="position: absolute; top: -8px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">1</span>
+            </div>
+
+            <!-- stats trio -->
+            <div style="position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <div style="padding: 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 10px;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1;">34</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .8px; text-transform: uppercase; margin-top: 5px;">WINS</div>
+              </div>
+              <div style="padding: 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 10px;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1;">19</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .8px; text-transform: uppercase; margin-top: 5px;">LOSSES</div>
+              </div>
+              <div style="padding: 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 10px;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1; color: oklch(0.87 0.19 126);">64<span style="font-size: 14px; color: #969aa5;">%</span></div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .8px; text-transform: uppercase; margin-top: 5px;">WIN RATE</div>
+              </div>
+              <span style="position: absolute; top: -20px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">2</span>
+            </div>
+
+            <!-- games -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; background: linear-gradient(135deg, #0b2540, #f5a623); color: #fff; border: 1px solid rgba(255,255,255,.1);">Mobile Legends</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; background: linear-gradient(135deg, #2a0f3e, #ff4655); color: #fff; border: 1px solid rgba(255,255,255,.1);">Valorant</span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; background: linear-gradient(135deg, #1a2a1a, #3a6a20); color: #fff; border: 1px solid rgba(255,255,255,.1);">COD Mobile</span>
+            </div>
+
+            <!-- achievements -->
+            <div style="position: relative;">
+              <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.6px; text-transform: uppercase; color: #61656f;">// Achievement badges</span>
+                <span style="flex: 1; height: 1px; background: #262932;"></span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f;">6</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #4a3a1a, #d4af37); display: grid; place-items: center; color: #10130a; font-size: 14px; font-weight: 700;">★</div>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 7.5px; color: #c7cad2; letter-spacing: .3px; text-align: center; line-height: 1.1;">First Blood</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #1a2540, #4a90c8); display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 700;">◈</div>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 7.5px; color: #c7cad2; letter-spacing: .3px; text-align: center; line-height: 1.1;">Hat Trick</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #4a1a3a, #7a2050); display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 700;">▲</div>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 7.5px; color: #c7cad2; letter-spacing: .3px; text-align: center; line-height: 1.1;">Big Game</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: #1a1d24; border: 1px dashed #31353f; display: grid; place-items: center; color: #31353f; font-size: 12px;">?</div>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 7.5px; color: #61656f; letter-spacing: .3px; text-align: center; line-height: 1.1;">Icon</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: #1a1d24; border: 1px dashed #31353f; display: grid; place-items: center; color: #31353f; font-size: 12px;">?</div>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 7.5px; color: #61656f; letter-spacing: .3px; text-align: center; line-height: 1.1;">Mythic</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: #1a1d24; border: 1px dashed #31353f; display: grid; place-items: center; color: #31353f; font-size: 12px;">?</div>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 7.5px; color: #61656f; letter-spacing: .3px; text-align: center; line-height: 1.1;">Legend</span>
+                </div>
+              </div>
+              <span style="position: absolute; top: -6px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">3</span>
+            </div>
+
+            <!-- recent history -->
+            <div style="position: relative;">
+              <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.6px; text-transform: uppercase; color: #61656f;">// Recent · Last 10</span>
+                <span style="flex: 1; height: 1px; background: #262932;"></span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                  <div style="width: 24px; height: 24px; border-radius: 5px; background: linear-gradient(135deg, #0b2540, #f5a623); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-size: 8px; font-weight: 700; color: #fff;">ML</div>
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; flex: 1;">QC Grind #07</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .5px; color: oklch(0.87 0.19 126); font-weight: 600;">WIN · 1ST</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                  <div style="width: 24px; height: 24px; border-radius: 5px; background: linear-gradient(135deg, #0b2540, #f5a623); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-size: 8px; font-weight: 700; color: #fff;">ML</div>
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; flex: 1;">Manila Clash #41</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .5px; color: #969aa5;">LOSS · SF</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                  <div style="width: 24px; height: 24px; border-radius: 5px; background: linear-gradient(135deg, #2a0f3e, #ff4655); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-size: 8px; font-weight: 700; color: #fff;">VL</div>
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; flex: 1;">Cavite Open</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .5px; color: oklch(0.87 0.19 126); font-weight: 600;">WIN · 3RD</span>
+                </div>
+              </div>
+              <span style="position: absolute; top: -6px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">4</span>
+            </div>
+
+          </div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(to top, #0f1116, transparent); pointer-events: none;"></div>
+        </div>
+
+        <div style="flex: 0 0 auto; height: 62px; border-top: 1px solid #262932; display: flex; align-items: center; justify-content: space-around; padding: 0 8px 8px; background: #0f1116;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">HOME</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">BROWSE</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">COMPETE</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">RANKS</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: oklch(0.87 0.19 126); flex: 1;"><div style="width: 22px; height: 22px; background: oklch(0.87 0.19 126); border-radius: 50%; box-shadow: 0 0 14px -2px oklch(0.87 0.19 126);"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">PROFILE</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width: 240px; padding-top: 10px; color: #c7cad2;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 4px;">Labaan · Screen · <a href="#1a" style="color: oklch(0.87 0.19 126);">1a</a></div>
+    <div style="font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: #f2f4f8; margin: 0 0 6px;">Player Profile</div>
+    <div style="font-size: 12px; color: rgba(199,202,210,.65); margin: 0 0 20px; line-height: 1.5;">The competitive identity — rank, badges, record and history. Public to all users; the foundation of team recruitment.</div>
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 12px;">Key interactions</div>
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">1</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Rank badge</b> is the hero, with a progress bar to the next tier (cumulative wins, never decays in MVP).</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">2</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Wins / losses / win-rate</b> and the game titles the player competes in.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">3</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Achievement badges</b> — milestones (First Blood, Hat Trick…) separate from rank, for personality.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">4</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Recent history & team affiliations</b> — what a recruiter checks before inviting.</span></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ LEADERBOARD — 2a ============ -->
+<div id="2a" style="display: flex; gap: 28px; align-items: flex-start;">
+  <div style="position: relative;">
+    <div style="position: absolute; top: -14px; left: -14px; z-index: 40; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .8px; padding: 4px 10px; border-radius: 4px;">2A · LEADERBOARD</div>
+    <div style="background: #000; border: 2px solid #2b2e37; border-radius: 46px; padding: 12px; box-shadow: 0 22px 60px rgba(0,0,0,.65);">
+      <div style="position: relative; width: 340px; height: 720px; background: #0f1116; color: #eceef2; border-radius: 34px; overflow: hidden; font-size: 13px; display: flex; flex-direction: column;">
+        <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 24px; background: #000; border-radius: 14px; z-index: 40;"></div>
+
+        <div style="flex: 0 0 auto; height: 42px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 22px 4px; font-family: 'Chakra Petch', sans-serif; font-size: 12px; font-weight: 600;">
+          <span style="font-variant-numeric: tabular-nums;">20:14</span>
+          <div style="display: flex; gap: 4px; align-items: center;"><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 20px; height: 10px; background: #969aa5; border-radius: 2px;"></span></div>
+        </div>
+
+        <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 4px 18px 8px;">
+          <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -.3px; flex: 1;">Ranks</h1>
+          <div style="display: flex; gap: 4px; padding: 3px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+            <div style="padding: 4px 9px; font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; color: oklch(0.87 0.19 126); background: rgba(184,240,65,.1); border-radius: 5px; letter-spacing: .3px;">S2</div>
+            <div style="padding: 4px 9px; font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 500; color: #61656f; letter-spacing: .3px;">S1</div>
+          </div>
+        </div>
+
+        <!-- Players/Teams toggle -->
+        <div style="padding: 0 18px 8px; position: relative;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: #1a1d24; border: 1px solid #31353f; border-radius: 10px;">
+            <div style="padding: 8px 6px; text-align: center; background: oklch(0.87 0.19 126); color: #10130a; border-radius: 7px; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 11.5px; letter-spacing: .3px; box-shadow: 0 0 12px -4px oklch(0.87 0.19 126 / .6);">Players</div>
+            <div style="padding: 8px 6px; text-align: center; color: #c7cad2; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 11.5px; letter-spacing: .3px;">Teams</div>
+          </div>
+          <span style="position: absolute; top: -18px; right: 10px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">1</span>
+        </div>
+
+        <!-- Game scope chips -->
+        <div style="padding: 0 18px 10px; display: flex; gap: 6px; overflow: hidden; position: relative;">
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; background: oklch(0.87 0.19 126); color: #10130a; border: 1px solid oklch(0.87 0.19 126);">Global</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; border: 1px solid #31353f; color: #c7cad2; background: #1a1d24;">Mobile Legends</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; border: 1px solid #31353f; color: #c7cad2; background: #1a1d24;">Valorant</span>
+          <span style="position: absolute; top: -18px; right: 10px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">2</span>
+        </div>
+
+        <div style="flex: 1 1 auto; overflow: hidden; position: relative;">
+          <div style="padding: 0 18px 68px; display: flex; flex-direction: column;">
+
+            <!-- rows -->
+            <div style="display: flex; flex-direction: column; gap: 6px; position: relative;">
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 28px; height: 30px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #d4af37, #8a6a1a); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #10130a;">1</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">shadowdrake</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; letter-spacing: .3px;">MYTHIC · MNL</div>
+                </div>
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 15px; color: oklch(0.87 0.19 126); font-variant-numeric: tabular-nums;">241 <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #61656f; font-weight: 500;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 28px; height: 30px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #b5b5b5, #6a6a6a); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #10130a;">2</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">mvp_aldous</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; letter-spacing: .3px;">MYTHIC · CBU</div>
+                </div>
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 15px; color: #eceef2; font-variant-numeric: tabular-nums;">188 <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #61656f; font-weight: 500;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 28px; height: 30px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, #cd7f32, #7a4a1a); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #10130a;">3</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">ph_apex</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; letter-spacing: .3px;">LEGEND · DVO</div>
+                </div>
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 15px; color: #eceef2; font-variant-numeric: tabular-nums;">162 <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #61656f; font-weight: 500;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #16181e; border: 1px solid #262932; border-radius: 8px;">
+                <div style="width: 28px; text-align: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #61656f;">4</div>
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12.5px;">cebu_storm <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; margin-left: 4px;">LEGEND</span></div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #c7cad2; font-variant-numeric: tabular-nums;">97 <span style="color: #61656f;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #16181e; border: 1px solid #262932; border-radius: 8px;">
+                <div style="width: 28px; text-align: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #61656f;">5</div>
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12.5px;">frostbyte <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; margin-left: 4px;">CHAMP</span></div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #c7cad2; font-variant-numeric: tabular-nums;">83 <span style="color: #61656f;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #16181e; border: 1px solid #262932; border-radius: 8px;">
+                <div style="width: 28px; text-align: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #61656f;">6</div>
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12.5px;">iloilo_ace <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; margin-left: 4px;">CHAMP</span></div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #c7cad2; font-variant-numeric: tabular-nums;">71 <span style="color: #61656f;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #16181e; border: 1px solid #262932; border-radius: 8px;">
+                <div style="width: 28px; text-align: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #61656f;">7</div>
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12.5px;">rex_marksman <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; margin-left: 4px;">CHAMP</span></div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #c7cad2; font-variant-numeric: tabular-nums;">64 <span style="color: #61656f;">W</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; background: #16181e; border: 1px solid #262932; border-radius: 8px;">
+                <div style="width: 28px; text-align: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #61656f;">8</div>
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12.5px;">nyx_of_night <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #61656f; margin-left: 4px;">CHAMP</span></div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #c7cad2; font-variant-numeric: tabular-nums;">58 <span style="color: #61656f;">W</span></span>
+              </div>
+              <span style="position: absolute; top: 20px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">3</span>
+            </div>
+
+          </div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(to top, #0f1116, transparent); pointer-events: none;"></div>
+        </div>
+
+        <!-- YOU strip -->
+        <div style="position: absolute; left: 0; right: 0; bottom: 62px; padding: 10px 18px; background: linear-gradient(180deg, rgba(184,240,65,.06), rgba(184,240,65,.02)); border-top: 1.5px solid oklch(0.87 0.19 126); backdrop-filter: blur(4px); z-index: 15;">
+          <div style="display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: baseline; gap: 6px;">
+              <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 15px; color: oklch(0.87 0.19 126); font-variant-numeric: tabular-nums;">1.2k</span>
+            </div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px;">kuya_blaze · <span style="color: oklch(0.87 0.19 126);">You</span></div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #969aa5;">CHAMPION</div>
+            </div>
+            <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 15px; color: #eceef2; font-variant-numeric: tabular-nums;">34 <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #61656f; font-weight: 500;">W</span></span>
+          </div>
+          <span style="position: absolute; top: -14px; right: 6px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">4</span>
+        </div>
+
+        <div style="flex: 0 0 auto; height: 62px; border-top: 1px solid #262932; display: flex; align-items: center; justify-content: space-around; padding: 0 8px 8px; background: #0f1116;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">HOME</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">BROWSE</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 6px;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">COMPETE</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: oklch(0.87 0.19 126); flex: 1;"><div style="width: 22px; height: 22px; background: oklch(0.87 0.19 126); border-radius: 6px; box-shadow: 0 0 14px -2px oklch(0.87 0.19 126);"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">RANKS</div></div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #61656f; flex: 1;"><div style="width: 22px; height: 22px; border: 1.6px solid currentColor; border-radius: 50%;"></div><div style="font-size: 9px; font-family: 'Chakra Petch', sans-serif; font-weight: 500; letter-spacing: .4px; text-transform: uppercase;">PROFILE</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width: 240px; padding-top: 10px; color: #c7cad2;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 4px;">Labaan · Screen · <a href="#2a" style="color: oklch(0.87 0.19 126);">2a</a></div>
+    <div style="font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: #f2f4f8; margin: 0 0 6px;">Leaderboard</div>
+    <div style="font-size: 12px; color: rgba(199,202,210,.65); margin: 0 0 20px; line-height: 1.5;">Global and per-game rankings for players and teams — season-based, cached, and showing the player's own standing pinned.</div>
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 12px;">Key interactions</div>
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">1</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;">Toggle <b style="color: #eaecf1;">Players vs Teams</b> leaderboards. Season chip in the header switches to prior seasons.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">2</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Global or per-game</b> scope — pick the title to rank within.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">3</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Season-based</b> with a countdown; rankings reset each season (cached, refreshed on rank change).</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">4</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;">The player's <b style="color: #eaecf1;">own position is pinned</b> to the bottom even when far down the list.</span></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ PLAYER SEARCH — 3a ============ -->
+<div id="3a" style="display: flex; gap: 28px; align-items: flex-start;">
+  <div style="position: relative;">
+    <div style="position: absolute; top: -14px; left: -14px; z-index: 40; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .8px; padding: 4px 10px; border-radius: 4px;">3A · PLAYER SEARCH</div>
+    <div style="background: #000; border: 2px solid #2b2e37; border-radius: 46px; padding: 12px; box-shadow: 0 22px 60px rgba(0,0,0,.65);">
+      <div style="position: relative; width: 340px; height: 720px; background: #0f1116; color: #eceef2; border-radius: 34px; overflow: hidden; font-size: 13px; display: flex; flex-direction: column;">
+        <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 24px; background: #000; border-radius: 14px; z-index: 40;"></div>
+
+        <div style="flex: 0 0 auto; height: 42px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 22px 4px; font-family: 'Chakra Petch', sans-serif; font-size: 12px; font-weight: 600;">
+          <span style="font-variant-numeric: tabular-nums;">20:14</span>
+          <div style="display: flex; gap: 4px; align-items: center;"><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 20px; height: 10px; background: #969aa5; border-radius: 2px;"></span></div>
+        </div>
+
+        <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 4px 18px 10px;">
+          <div style="width: 30px; height: 30px; border: 1px solid #31353f; border-radius: 8px; display: grid; place-items: center; color: #c7cad2; font-size: 16px;">‹</div>
+          <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -.3px; flex: 1;">Find Players</h1>
+        </div>
+
+        <!-- search field -->
+        <div style="padding: 0 18px 12px;">
+          <div style="height: 40px; border: 1px solid #31353f; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; padding: 0 12px; gap: 8px; color: #61656f; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">
+            <span>⌕</span>
+            <span>Search by username…</span>
+          </div>
+        </div>
+
+        <!-- filters -->
+        <div style="padding: 0 18px 8px; display: flex; flex-direction: column; gap: 6px; position: relative;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #61656f; letter-spacing: .8px; text-transform: uppercase; margin-right: 2px;">GAME</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; background: oklch(0.87 0.19 126); color: #10130a;">Mobile Legends ×</span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #61656f; letter-spacing: .8px; text-transform: uppercase; margin-left: 4px;">MIN</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; background: oklch(0.87 0.19 126); color: #10130a;">Elite ×</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #61656f; letter-spacing: .8px; text-transform: uppercase; margin-right: 2px;">REGION</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; border: 1px solid #31353f; color: #c7cad2; background: #1a1d24;">Active 7d ×</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .6px; text-transform: uppercase; padding: 4px 8px; border-radius: 5px; border: 1px solid #31353f; color: #c7cad2; background: #1a1d24;">Free Agents Only</span>
+          </div>
+          <span style="position: absolute; top: -18px; right: 4px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">1</span>
+        </div>
+
+        <div style="padding: 0 18px 6px; display: flex; align-items: center; gap: 8px;">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #61656f; letter-spacing: 1px; text-transform: uppercase;">// 24 results</span>
+          <span style="flex: 1; height: 1px; background: #262932;"></span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: oklch(0.87 0.19 126);">SORT · RANK ↓</span>
+        </div>
+
+        <div style="flex: 1 1 auto; overflow: hidden; position: relative;">
+          <div style="padding: 6px 18px 18px; display: flex; flex-direction: column; gap: 8px;">
+
+            <!-- result 1 — free agent -->
+            <div style="position: relative; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; background: #1a1d24; border: 1px solid #31353f; border-radius: 10px;">
+              <div style="position: relative; width: 42px; height: 46px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center;">
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 17px; color: #eceef2; line-height: 1;">5</span>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">frostbyte</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; margin-top: 2px; letter-spacing: .3px;">LEGEND · 83 W · <span style="color: oklch(0.87 0.19 126);">FREE AGENT</span></div>
+              </div>
+              <button style="height: 30px; padding: 0 12px; border: none; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: #10130a; background: oklch(0.87 0.19 126); border-radius: 6px;">INVITE</button>
+              <span style="position: absolute; top: -8px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">2</span>
+            </div>
+
+            <!-- result 2 — already on a team -->
+            <div style="position: relative; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; background: #16181e; border: 1px solid #262932; border-radius: 10px;">
+              <div style="position: relative; width: 42px; height: 46px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center;">
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 17px; color: #eceef2; line-height: 1;">4</span>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">ml_reaper</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; margin-top: 2px; letter-spacing: .3px;">CHAMPION · <span style="color: #d4af37;">◆ SIBAT</span></div>
+              </div>
+              <button style="height: 30px; padding: 0 12px; background: transparent; border: 1px solid #31353f; color: #c7cad2; border-radius: 6px; font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: .5px; text-transform: uppercase;">INVITE</button>
+            </div>
+
+            <!-- result 3 — free agent -->
+            <div style="display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; background: #1a1d24; border: 1px solid #31353f; border-radius: 10px;">
+              <div style="position: relative; width: 42px; height: 46px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center;">
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 17px; color: #eceef2; line-height: 1;">3</span>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">quick_silver</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; margin-top: 2px; letter-spacing: .3px;">ELITE · 42 W · <span style="color: oklch(0.87 0.19 126);">FREE AGENT</span></div>
+              </div>
+              <button style="height: 30px; padding: 0 12px; border: none; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: #10130a; background: oklch(0.87 0.19 126); border-radius: 6px;">INVITE</button>
+            </div>
+
+            <!-- result 4 — invited already -->
+            <div style="position: relative; display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; background: #16181e; border: 1px solid #262932; border-radius: 10px;">
+              <div style="position: relative; width: 42px; height: 46px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center;">
+                <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 17px; color: #eceef2; line-height: 1;">3</span>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px;">apex_ph</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; margin-top: 2px; letter-spacing: .3px;">ELITE · 38 W · FREE AGENT</div>
+              </div>
+              <span style="height: 30px; padding: 0 12px; display: inline-flex; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .5px; color: oklch(0.87 0.19 126); border: 1px dashed oklch(0.87 0.19 126); border-radius: 6px;">INVITED</span>
+              <span style="position: absolute; top: -8px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">3</span>
+            </div>
+
+          </div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(to top, #0f1116, transparent); pointer-events: none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width: 240px; padding-top: 10px; color: #c7cad2;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 4px;">Labaan · Screen · <a href="#3a" style="color: oklch(0.87 0.19 126);">3a</a></div>
+    <div style="font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: #f2f4f8; margin: 0 0 6px;">Player Search</div>
+    <div style="font-size: 12px; color: rgba(199,202,210,.65); margin: 0 0 20px; line-height: 1.5;">Rank-driven recruitment — teams discover players by game and minimum rank, vet the profile, then send an invite.</div>
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 12px;">Key interactions</div>
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">1</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;">Search by <b style="color: #eaecf1;">game title + minimum rank</b>, with region and recent-activity filters.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">2</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;">Filter by <b style="color: #eaecf1;">free-agent vs already-on-a-team</b> status. Teamed players show the team badge.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">3</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;">Each result links to the <b style="color: #eaecf1;">full public profile</b> to vet before inviting; sent invites show as "INVITED".</span></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ============ TEAM MANAGEMENT — 4a ============ -->
+<div id="4a" style="display: flex; gap: 28px; align-items: flex-start;">
+  <div style="position: relative;">
+    <div style="position: absolute; top: -14px; left: -14px; z-index: 40; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .8px; padding: 4px 10px; border-radius: 4px;">4A · TEAM MANAGEMENT</div>
+    <div style="background: #000; border: 2px solid #2b2e37; border-radius: 46px; padding: 12px; box-shadow: 0 22px 60px rgba(0,0,0,.65);">
+      <div style="position: relative; width: 340px; height: 720px; background: #0f1116; color: #eceef2; border-radius: 34px; overflow: hidden; font-size: 13px; display: flex; flex-direction: column;">
+        <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 96px; height: 24px; background: #000; border-radius: 14px; z-index: 40;"></div>
+
+        <div style="flex: 0 0 auto; height: 42px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 22px 4px; font-family: 'Chakra Petch', sans-serif; font-size: 12px; font-weight: 600;">
+          <span style="font-variant-numeric: tabular-nums;">20:14</span>
+          <div style="display: flex; gap: 4px; align-items: center;"><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 14px; height: 10px; background: #969aa5; border-radius: 2px;"></span><span style="width: 20px; height: 10px; background: #969aa5; border-radius: 2px;"></span></div>
+        </div>
+
+        <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 4px 18px 10px;">
+          <div style="width: 30px; height: 30px; border: 1px solid #31353f; border-radius: 8px; display: grid; place-items: center; color: #c7cad2; font-size: 16px;">‹</div>
+          <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -.3px; flex: 1;">Team MNL</h1>
+          <div style="width: 30px; height: 30px; border: 1px solid #31353f; border-radius: 8px; display: grid; place-items: center; color: #969aa5; font-size: 12px;">⚙</div>
+        </div>
+
+        <div style="flex: 1 1 auto; overflow: hidden; position: relative;">
+          <div style="padding: 0 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+
+            <!-- team identity -->
+            <div style="position: relative; display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 12px; padding: 12px; background: #1a1d24; border: 1px solid #31353f; border-radius: 12px;">
+              <div style="position: relative; width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(135deg, #ff4655, #a01727); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 16px; color: #fff; border: 1px solid rgba(255,255,255,.1);">MNL</div>
+              <div style="min-width: 0;">
+                <div style="display: flex; align-items: baseline; gap: 6px;">
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -.2px;">Team MNL</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #61656f;">[MNL]</span>
+                </div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; margin-top: 3px; letter-spacing: .3px;">MOBILE LEGENDS · 5/5 ROSTER</div>
+              </div>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 4px; font-family: 'Chakra Petch', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; border: 1px solid oklch(0.87 0.19 126); color: oklch(0.87 0.19 126); background: rgba(184,240,65,.06);">VERIFIED</span>
+              <span style="position: absolute; top: -8px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">1</span>
+            </div>
+
+            <!-- roster header -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.6px; text-transform: uppercase; color: #61656f;">// Roster</span>
+              <span style="flex: 1; height: 1px; background: #262932;"></span>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #61656f;">5</span>
+            </div>
+
+            <!-- roster list -->
+            <div style="position: relative; display: flex; flex-direction: column; gap: 6px;">
+              <!-- captain -->
+              <div style="display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 30px; height: 32px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #eceef2;">4</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12.5px;">kuya_blaze</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: oklch(0.87 0.19 126); letter-spacing: .3px;">CAPTAIN · YOU</div>
+                </div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #c7cad2; letter-spacing: .3px;">MID</span>
+                <div style="width: 20px; height: 20px; color: #61656f; display: grid; place-items: center; font-size: 14px;">⋯</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 30px; height: 32px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #eceef2;">5</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12.5px;">frostbyte</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .3px;">JOINED 3W AGO</div>
+                </div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #c7cad2; letter-spacing: .3px;">JUNGLE</span>
+                <div style="width: 20px; height: 20px; color: #61656f; display: grid; place-items: center; font-size: 14px;">⋯</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 30px; height: 32px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #eceef2;">4</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12.5px;">ml_reaper</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .3px;">JOINED 2M AGO</div>
+                </div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #c7cad2; letter-spacing: .3px;">GOLD</span>
+                <div style="width: 20px; height: 20px; color: #61656f; display: grid; place-items: center; font-size: 14px;">⋯</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 30px; height: 32px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #eceef2;">3</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12.5px;">quick_silver</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .3px;">JOINED 4M AGO</div>
+                </div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #c7cad2; letter-spacing: .3px;">EXP</span>
+                <div style="width: 20px; height: 20px; color: #61656f; display: grid; place-items: center; font-size: 14px;">⋯</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 34px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: #1a1d24; border: 1px solid #31353f; border-radius: 8px;">
+                <div style="width: 30px; height: 32px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: linear-gradient(145deg, oklch(0.5 0.09 126), #262a33); display: grid; place-items: center; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 13px; color: #eceef2;">3</div>
+                <div style="min-width: 0;">
+                  <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12.5px;">nightowl</div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #61656f; letter-spacing: .3px;">JOINED 6M AGO</div>
+                </div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #c7cad2; letter-spacing: .3px;">ROAM</span>
+                <div style="width: 20px; height: 20px; color: #61656f; display: grid; place-items: center; font-size: 14px;">⋯</div>
+              </div>
+              <span style="position: absolute; top: -16px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">2</span>
+            </div>
+
+            <!-- invite bar -->
+            <div style="position: relative; display: grid; grid-template-columns: 1fr auto; gap: 6px;">
+              <div style="height: 40px; border: 1px solid #31353f; border-radius: 10px; background: #1a1d24; display: flex; align-items: center; padding: 0 12px; gap: 8px; color: #61656f; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;">
+                <span>@</span>
+                <span>Invite by username…</span>
+              </div>
+              <button style="height: 40px; padding: 0 14px; border: none; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: #10130a; background: oklch(0.87 0.19 126); border-radius: 10px; display: flex; align-items: center; gap: 6px;">RANK SEARCH ›</button>
+              <span style="position: absolute; top: -8px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">3</span>
+            </div>
+
+            <!-- pending invites -->
+            <div style="position: relative;">
+              <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.6px; text-transform: uppercase; color: #61656f;">// Pending invites</span>
+                <span style="flex: 1; height: 1px; background: #262932;"></span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #61656f;">2</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #16181e; border: 1px dashed #31353f; border-radius: 8px;">
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; flex: 1;">apex_ph</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: oklch(0.87 0.19 126); letter-spacing: .3px;">INVITED · 2H AGO</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #16181e; border: 1px dashed #31353f; border-radius: 8px;">
+                  <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; flex: 1;">storm_ci</span>
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #969aa5; letter-spacing: .3px;">INVITED · 1D AGO</span>
+                </div>
+              </div>
+              <span style="position: absolute; top: -6px; right: -8px; z-index: 30; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center; box-shadow: 0 0 0 3px #0f1116, 0 2px 6px rgba(0,0,0,.5);">4</span>
+            </div>
+
+          </div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 34px; background: linear-gradient(to top, #0f1116, transparent); pointer-events: none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width: 240px; padding-top: 10px; color: #c7cad2;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 4px;">Labaan · Screen · <a href="#4a" style="color: oklch(0.87 0.19 126);">4a</a></div>
+    <div style="font-family: 'Chakra Petch', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: #f2f4f8; margin: 0 0 6px;">Team Management</div>
+    <div style="font-size: 12px; color: rgba(199,202,210,.65); margin: 0 0 20px; line-height: 1.5;">Create a team identity, manage the roster, and recruit — by username or straight from rank search.</div>
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(232,234,240,.4); margin: 0 0 12px;">Key interactions</div>
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">1</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Team identity</b> — name, tag, logo, captain shown, verification badge.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">2</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Roster management</b> — captain can promote or remove members; each shows their rank + role.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">3</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;">Invite <b style="color: #eaecf1;">by username</b> or jump into <b style="color: #eaecf1;">rank search</b> to find players.</span></li>
+      <li style="display: flex; gap: 10px;"><span style="flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: oklch(0.87 0.19 126); color: #10130a; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; display: grid; place-items: center;">4</span><span style="font-size: 12.5px; line-height: 1.5; color: #b9bcc6;"><b style="color: #eaecf1;">Pending invites</b> tracked until the player accepts or declines.</span></li>
+    </ol>
+  </div>
+</div>
+
+</section>
+</x-dc>
+</body>
+</html>
