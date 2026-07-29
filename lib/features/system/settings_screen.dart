@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/providers.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
@@ -18,7 +18,15 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value ?? LbFixtures.me;
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    final linkedProviders =
+        ref.watch(linkedProvidersProvider).value ?? const {};
+    final payout = ref.watch(payoutAccountProvider(user.id)).value;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -36,28 +44,28 @@ class SettingsScreen extends ConsumerWidget {
             icon: Icons.person_rounded,
             label: 'Username',
             value: user.username,
-            onTap: () {},
+            onTap: () => context.push('/settings/username'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.mail_rounded,
             label: 'Email',
-            value: user.email,
-            onTap: () {},
+            value: user.email.isEmpty ? 'Not set' : user.email,
+            onTap: () => context.push('/settings/email'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.pin_drop_rounded,
             label: 'Region',
             value: user.region ?? 'Not set',
-            onTap: () {},
+            onTap: () => context.push('/settings/region'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.sports_esports_rounded,
             label: 'Games',
             value: user.games.isEmpty ? 'None' : user.games.join(' · '),
-            onTap: () {},
+            onTap: () => context.push('/settings/games'),
           ),
           const SizedBox(height: 20),
           SectionLabel('Notifications'),
@@ -74,23 +82,27 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsRow(
             icon: Icons.g_mobiledata_rounded,
             label: 'Google',
-            value: 'Connected',
-            valueColor: LbColors.lime,
-            onTap: () {},
+            value: linkedProviders.contains('google.com')
+                ? 'Connected'
+                : 'Not connected',
+            valueColor: linkedProviders.contains('google.com')
+                ? LbColors.lime
+                : null,
+            onTap: () => context.push('/settings/accounts'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.facebook_rounded,
             label: 'Facebook',
-            value: 'Not connected',
-            onTap: () {},
+            value: 'Unavailable',
+            onTap: () => context.push('/settings/accounts'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.phone_rounded,
             label: 'Phone',
             value: user.phone ?? 'Not linked',
-            onTap: () {},
+            onTap: () => context.push('/settings/accounts'),
           ),
           const SizedBox(height: 20),
           SectionLabel('Payouts'),
@@ -98,8 +110,10 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsRow(
             icon: Icons.account_balance_wallet_rounded,
             label: 'Payout account',
-            value: 'GCash · ••7',
-            onTap: () {},
+            value: payout == null
+                ? 'Not set'
+                : '${payout.provider.toUpperCase()} · ${payout.maskedNumber}',
+            onTap: () => context.push('/settings/payout'),
           ),
           const SizedBox(height: 20),
           SectionLabel('Legal'),
@@ -107,19 +121,22 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsRow(
             icon: Icons.privacy_tip_rounded,
             label: 'Privacy policy',
-            onTap: () {},
+            onTap: () => context.push('/settings/privacy'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.description_rounded,
             label: 'Terms of service',
-            onTap: () {},
+            onTap: () => context.push('/settings/terms'),
           ),
           const SizedBox(height: 6),
           _SettingsRow(
             icon: Icons.verified_rounded,
             label: 'GAB permit registry',
-            onTap: () {},
+            onTap: () => launchUrl(
+              Uri.parse('https://gab.gov.ph/'),
+              mode: LaunchMode.externalApplication,
+            ),
           ),
           const SizedBox(height: 24),
           SlantButton(
@@ -159,7 +176,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Permanent. Rank, badges, and history are erased. Pending payouts still process.',
+                        'Request permanent account closure and data review.',
                         style: LbType.bodyXs.copyWith(
                           color: LbColors.textMuted,
                         ),
@@ -191,9 +208,9 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: LbColors.surface,
-        title: const Text('Delete account?'),
+        title: const Text('Account deletion'),
         content: const Text(
-          'Rank, badges, and history are erased permanently. Pending prize payouts still process. This cannot be undone.',
+          'Self-service deletion is not available yet because tournament records, disputes, and pending payouts require a server-side retention review. No data has been deleted. This flow must be completed before production release.',
         ),
         actions: [
           TextButton(
@@ -202,8 +219,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(foregroundColor: LbColors.danger),
-            child: const Text('Delete'),
+            child: const Text('Close'),
           ),
         ],
       ),

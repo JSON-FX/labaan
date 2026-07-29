@@ -17,6 +17,10 @@ import 'features/registration/registration_screen.dart';
 import 'features/shell/main_shell.dart';
 import 'features/system/notification_prefs_screen.dart';
 import 'features/system/notifications_screen.dart';
+import 'features/system/account_setting_screen.dart';
+import 'features/system/connected_accounts_screen.dart';
+import 'features/system/legal_document_screen.dart';
+import 'features/system/payout_account_screen.dart';
 import 'features/system/rank_up_screen.dart';
 import 'features/system/settings_screen.dart';
 import 'features/team/player_search_screen.dart';
@@ -69,6 +73,29 @@ class LabaanApp extends StatelessWidget {
           GoRoute(
             path: 'notifications',
             builder: (_, _) => const NotificationPrefsScreen(),
+          ),
+          for (final field in AccountSettingField.values)
+            GoRoute(
+              path: field.name,
+              builder: (_, _) => AccountSettingScreen(field: field),
+            ),
+          GoRoute(
+            path: 'accounts',
+            builder: (_, _) => const ConnectedAccountsScreen(),
+          ),
+          GoRoute(
+            path: 'payout',
+            builder: (_, _) => const PayoutAccountScreen(),
+          ),
+          GoRoute(
+            path: 'privacy',
+            builder: (_, _) =>
+                const LegalDocumentScreen(document: LegalDocument.privacy),
+          ),
+          GoRoute(
+            path: 'terms',
+            builder: (_, _) =>
+                const LegalDocumentScreen(document: LegalDocument.terms),
           ),
         ],
       ),
