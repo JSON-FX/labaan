@@ -123,7 +123,7 @@ class TournamentDetailScreen extends ConsumerWidget {
               bottom: 0,
               child: _RegisterCta(
                 tournament: t,
-                onPressed: () => context.push('/register'),
+                onPressed: () => context.push('/register/${t.id}'),
               ),
             ),
           ],

@@ -1,33 +1,47 @@
 # Labaan — Handoff
 
-**Last updated:** 2026-07-28
-**State:** Player mobile app is fully navigable and now selects the sibling
-`labaan-backend` Supabase project automatically when runtime credentials are
-provided. The local backend has a complete, idempotent development seed and
-the phone bypass authenticates its seeded player. Mock mode remains the
-default when credentials are absent. Privileged backend Edge Functions are
-still stubs.
+**Last updated:** 2026-07-30
+**State:** Player mobile app is fully navigable and uses the hosted sibling
+`labaan-backend` Supabase project by default for normal app launches.
+Firebase project `labaan-f3fa6` owns Google and phone
+authentication, while Supabase maps Firebase UIDs to the profile UUIDs used
+by application tables. The local backend has a complete, idempotent
+development seed. Mock mode is restricted to automated tests or an explicit
+`USE_MOCK_BACKEND=true` launch.
+Most privileged backend Edge Functions are still stubs.
+
+The first privileged slice is now implemented: registration reservation and
+the PayMongo-shaped mock payment adapter are deployed to the hosted dev
+project. GCash simulates success, Maya stays pending, and card simulates a
+decline. See [`docs/IMPLEMENTATION_CHECKLIST.md`](docs/IMPLEMENTATION_CHECKLIST.md)
+for the maintained cross-project backlog.
 
 ---
 
 ## TL;DR
 
-`flutter run --dart-define-from-file=config/local_backend.json` → tap
-**CONTINUE WITH PHONE** → the app authenticates the seeded `@tonton26`
-account and opens the real local data through Supabase/RLS. The seed includes
-users, teams, tournaments, registrations, matches, payments, notifications,
+`flutter run --flavor dev` on iOS → use Google or phone to authenticate
+through the Dev Firebase app → the app creates or loads the mapped
+Supabase profile and opens real data through RLS. The seed includes users,
+teams, tournaments, registrations, matches, payments, notifications,
 moderation, and a completed payout.
 
-To use Supabase: copy `config/backend.example.json` to the ignored
-`config/backend.json`, add the anon/publishable key, and run with
-`--dart-define-from-file=config/backend.json`. No provider edits are needed.
-For UI testing, Continue with phone defaults to the authenticated seeded
-`@tonton26` development account (or its mock equivalent); set
-`BYPASS_PHONE_AUTH=false` to test real Supabase OTP.
+The hosted development Supabase URL and publishable client key are the normal
+defaults. Use `config/backend.json` only to override them for another project.
+Use `--dart-define=USE_MOCK_BACKEND=true` only when intentionally developing
+against fixtures. No provider edits are needed.
+
+iOS has shared `dev` and `prod` schemes. Dev uses
+`com.labaan.labaan-dev`, displays as **Labaan Dev**, has Firebase app
+`1:77063889783:ios:c5cf4601ed1cfd63ea3772`, and is the required scheme for
+simulator/device testing. Prod keeps `com.labaan.labaan` and is selected
+explicitly for production runs or archives.
+There is no phone bypass: Continue with phone always opens the OTP screen and,
+with backend credentials present, uses Firebase verification.
 
 The sibling backend's local Supabase stack is seeded and can be rebuilt with
 `npm run db:reset`. The hosted development project
-`xmbfzcgejpzvgrfvvfyi` also has migrations `0019`–`0021` and the same
+`xmbfzcgejpzvgrfvvfyi` also has migrations `0019`–`0024` and the same
 synthetic seed, applied on 2026-07-28.
 
 ---
@@ -124,8 +138,8 @@ Riverpod providers  ── lib/core/data/providers.dart
     ▼
 Repository interfaces  ── lib/core/data/repos.dart
     │
-    ├─ MockRepository (default)   ── mock_repos.dart + fixtures.dart
-    └─ SupabaseRepository (later) ── supabase_repos.dart + Lb.client
+    ├─ MockRepository (tests/explicit mode) ── mock_repos.dart + fixtures.dart
+    └─ SupabaseRepository (normal app runs) ── supabase_repos.dart + Lb.client
 ```
 
 **Every screen depends on a Dart interface, never on Supabase directly.**
@@ -158,7 +172,7 @@ Backend swap = 11 provider-binding lines.
 ## Tests
 
 ```bash
-flutter test                    # 58 passing (39 unit + 19 widget)
+flutter test                    # 69 passing
 flutter analyze                 # clean
 dart format --set-exit-if-changed lib test   # clean
 ```
@@ -171,9 +185,14 @@ CI runs all three on every push / PR to `main`.
 
 - **App icons + splash** — user is designing these.
 - **Golden tests** — need Chakra Petch / IBM Plex bundled locally instead of google_fonts fetching at runtime.
-- **Integration tests** against a real Supabase dev DB — deferred until credentials.
-- **Phone OTP verification screen** — `SupabaseAuthRepo.signInWithPhone` currently throws `UnimplementedError` at the second step (OTP code entry). Needs a small screen.
-- **Real PayMongo checkout redirect** — Registration currently mocks the flow; real one needs a Next.js API route to create the payment intent.
+- **Broader integration coverage** — Firebase phone auth, settings, payout
+  preferences, and mock GCash registration are covered against hosted dev;
+  result/dispute and real PayMongo flows are not.
+- **Google sign-in device smoke test** — provider and platform configuration are complete, but the interactive account-selection flow still needs a manual smoke test on iOS and Android.
+- **PayMongo account activation** — the backend now has the correct
+  transactional reservation/payment boundary and a deterministic dev adapter,
+  but real Checkout/Payment Intent calls from the Edge Function, activated
+  channels, and signed webhook processing still require merchant credentials.
 - **FCM push wiring** — repo interfaces don't own push subscription; needs `firebase_messaging` init in `main.dart` when Firebase project exists.
 - **Real Wallet + payment method management** — not built (was in the "post-MVP polish" list).
 - **Coverage threshold** — CI uploads `lcov.info` but no enforced minimum yet.
@@ -189,12 +208,10 @@ CI runs all three on every push / PR to `main`.
 - Wallet screen (transaction history from `LbPayment` + `LbDisbursement`).
 - Report/block user flow.
 
-**B. Backend integration when it lands:**
-- Provision Supabase project.
-- Run 3 migrations + seed.
-- Flip 11 provider bindings.
-- Add integration tests against dev DB.
-- Wire Next.js API routes for PayMongo webhook + `register_for_tournament` RPC.
+**B. Continue backend integration:**
+- Replace the PayMongo mock adapter with real Checkout/Payment Intent calls.
+- Verify signed PayMongo webhooks and idempotent event processing.
+- Implement result submission, verification, and dispute Edge Functions.
 - Wire FCM + `firebase_messaging`.
 
 **C. Nice-to-have UX layer:**
@@ -224,9 +241,9 @@ Also read these to load full context:
 - The spec PDF at /Users/richtonehangad/Downloads/Labaan-design/uploads/Labaan_Project_Overview-v-1-3.pdf
   (needs pdftoppm — install via `HOMEBREW_NO_REQUIRE_TAP_TRUST=1 brew install poppler`)
 
-Current state: `flutter test` passes 58/58, `flutter analyze` is clean,
-every MVP screen is built and consumes Riverpod providers backed by mock
-repos. Supabase SQL + swap-ready repos are ready but not activated.
+Current state: every MVP screen is built and consumes Riverpod providers.
+Normal launches use Firebase Auth plus the hosted Supabase backend; widget
+tests remain fixture-backed.
 
 Conventions to follow:
 - Never invent rank names, badge names, or tier fees — draw from
@@ -259,20 +276,22 @@ confirm you have the right picture, then wait for my direction.
 ```bash
 # From /Users/richtonehangad/FlutterProjects/labaan
 
-# Mocks only (default):
-flutter run
+# Hosted development Supabase on the iOS Dev target:
+flutter run --flavor dev
 
 # Seeded local Supabase (iOS simulator):
 cd /Users/richtonehangad/NodeProjects/labaan-backend
 npm run db:start
 npm run db:reset
 cd /Users/richtonehangad/FlutterProjects/labaan
-flutter run --dart-define-from-file=config/local_backend.json
+flutter run --flavor dev \
+  --dart-define-from-file=config/local_backend.json
 
-# Real Supabase:
-flutter run \
-  --dart-define=SUPABASE_URL=https://xxxxx.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOi...
+# Intentional fixture mode:
+flutter run --flavor dev --dart-define=USE_MOCK_BACKEND=true
+
+# Production iOS archive:
+flutter build ipa --flavor prod --release
 
 # Tests:
 flutter test

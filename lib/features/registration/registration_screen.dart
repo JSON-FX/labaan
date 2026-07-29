@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
 import '../../core/domain/tournament_tier.dart';
@@ -30,30 +29,62 @@ class RegistrationScreen extends ConsumerStatefulWidget {
 }
 
 class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
-  bool _teamMode = true;
+  bool _teamMode = false;
   int _payMethod = 0; // 0 GCash, 1 Maya, 2 Card
   bool _submitting = false;
 
   PayMethod get _selectedMethod =>
       const [PayMethod.gcash, PayMethod.maya, PayMethod.card][_payMethod];
 
-  Future<void> _pay(LbTournament t) async {
+  Future<void> _pay(LbTournament t, LbTeam? selectedTeam) async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please sign in again.')));
+      return;
+    }
+    if (_teamMode && selectedTeam == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Join or create a team first.')),
+      );
+      return;
+    }
     setState(() => _submitting = true);
-    final user = ref.read(currentUserProvider).value ?? LbFixtures.me;
     final repo = ref.read(registrationRepoProvider);
     try {
-      await repo.register(
+      final registration = await repo.register(
         tournamentId: t.id,
         userId: user.id,
-        teamId: _teamMode ? LbFixtures.teamMnl.id : null,
+        teamId: _teamMode ? selectedTeam?.id : null,
         method: _selectedMethod,
         captchaToken: 'stub-captcha',
       );
       if (!mounted) return;
-      context.go('/register/result/success');
-    } catch (_) {
+      final result = switch (registration.paymentStatus) {
+        RegistrationPaymentStatus.paid => 'success',
+        RegistrationPaymentStatus.pending => 'pending',
+        RegistrationPaymentStatus.failed ||
+        RegistrationPaymentStatus.refunded => 'failed',
+      };
+      context.go(
+        Uri(
+          path: '/register/result/$result',
+          queryParameters: {
+            'tournamentId': t.id,
+            'tournament': t.title,
+            'amount': formatPeso(registration.amountPhp),
+            if (registration.paymongoRef != null)
+              'reference': registration.paymongoRef,
+          },
+        ).toString(),
+      );
+    } catch (error) {
       if (!mounted) return;
-      context.go('/register/result/failed');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not start payment: $error')),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -62,6 +93,11 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(tournamentByIdProvider(widget.tournamentId));
+    final user = ref.watch(currentUserProvider).value;
+    final teams = user == null
+        ? const <LbTeam>[]
+        : ref.watch(teamsForUserProvider(user.id)).value ?? const <LbTeam>[];
+    final selectedTeam = teams.isEmpty ? null : teams.first;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -106,10 +142,22 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       Expanded(
                         child: _EntryModeCard(
                           selected: _teamMode,
-                          onTap: () => setState(() => _teamMode = true),
-                          avatar: const TeamAvatar(code: 'MNL'),
-                          title: 'Team MNL',
-                          subtitle: '5 PLAYERS',
+                          onTap: () {
+                            if (selectedTeam == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Join or create a team first.'),
+                                ),
+                              );
+                              return;
+                            }
+                            setState(() => _teamMode = true);
+                          },
+                          avatar: TeamAvatar(code: selectedTeam?.tag ?? '—'),
+                          title: selectedTeam?.name ?? 'No team',
+                          subtitle: selectedTeam == null
+                              ? 'SOLO ONLY'
+                              : '${selectedTeam.memberCount} PLAYERS',
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -172,6 +220,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     gradient: const [Color(0xFF2A2F3A), Color(0xFF14171E)],
                   ),
                   const SizedBox(height: 10),
+                  const _MockPaymentNote(),
+                  const SizedBox(height: 8),
                   const _CaptchaNote(),
                 ],
               ),
@@ -183,10 +233,34 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               child: _PayCta(
                 tier: t.tier,
                 busy: _submitting,
-                onPressed: _submitting ? null : () => _pay(t),
+                onPressed: _submitting ? null : () => _pay(t, selectedTeam),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MockPaymentNote extends StatelessWidget {
+  const _MockPaymentNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: LbColors.gold.withValues(alpha: 0.08),
+        border: Border.all(color: LbColors.gold.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        'PAYMONGO TEST MODE · GCash succeeds · Maya stays pending · Card declines',
+        style: LbType.metaSm.copyWith(
+          color: LbColors.gold,
+          fontSize: 9,
+          height: 1.4,
         ),
       ),
     );
@@ -405,11 +479,15 @@ class _FeeRow extends StatelessWidget {
               children: [
                 Text(label, style: LbType.body),
                 const SizedBox(width: 4),
-                Text(
-                  hint,
-                  style: LbType.metaSm.copyWith(
-                    color: LbColors.textDim,
-                    fontSize: 9.5,
+                Flexible(
+                  child: Text(
+                    hint,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: LbType.metaSm.copyWith(
+                      color: LbColors.textDim,
+                      fontSize: 9.5,
+                    ),
                   ),
                 ),
               ],

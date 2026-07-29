@@ -17,6 +17,7 @@ class PaymentResultScreen extends StatelessWidget {
     this.tournamentTitle = 'Manila Ascent Cup S3',
     this.amount = '₱500.00',
     this.reference,
+    this.tournamentId,
     super.key,
   });
 
@@ -24,6 +25,7 @@ class PaymentResultScreen extends StatelessWidget {
   final String tournamentTitle;
   final String amount;
   final String? reference;
+  final String? tournamentId;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,7 @@ class PaymentResultScreen extends StatelessWidget {
                 status: status,
               ),
               const Spacer(),
-              _ActionsRow(status: status),
+              _ActionsRow(status: status, tournamentId: tournamentId),
               const SizedBox(height: 8),
               if (status != PaymentResult.failed)
                 Text(
@@ -254,8 +256,9 @@ class _ReceiptCard extends StatelessWidget {
 }
 
 class _ActionsRow extends StatelessWidget {
-  const _ActionsRow({required this.status});
+  const _ActionsRow({required this.status, this.tournamentId});
   final PaymentResult status;
+  final String? tournamentId;
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +269,9 @@ class _ActionsRow extends StatelessWidget {
             Expanded(
               child: SlantButton(
                 label: 'View bracket',
-                onPressed: () => context.go('/compete'),
+                onPressed: () => tournamentId == null
+                    ? context.go('/compete')
+                    : context.go('/bracket/$tournamentId'),
               ),
             ),
             const SizedBox(width: 8),
@@ -290,7 +295,9 @@ class _ActionsRow extends StatelessWidget {
             Expanded(
               child: SlantButton(
                 label: 'Retry payment',
-                onPressed: () => context.go('/register'),
+                onPressed: () => tournamentId == null
+                    ? context.go('/browse')
+                    : context.go('/register/$tournamentId'),
               ),
             ),
             const SizedBox(width: 8),

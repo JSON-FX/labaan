@@ -42,6 +42,12 @@ class LabaanApp extends StatelessWidget {
       GoRoute(path: '/setup', builder: (_, _) => const SetupScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegistrationScreen()),
       GoRoute(
+        path: '/register/:tournamentId',
+        builder: (_, state) => RegistrationScreen(
+          tournamentId: state.pathParameters['tournamentId']!,
+        ),
+      ),
+      GoRoute(
         path: '/register/result/:status',
         builder: (_, state) {
           final raw = state.pathParameters['status'] ?? 'success';
@@ -49,7 +55,15 @@ class LabaanApp extends StatelessWidget {
             (s) => s.name == raw,
             orElse: () => PaymentResult.success,
           );
-          return PaymentResultScreen(status: status);
+          return PaymentResultScreen(
+            status: status,
+            tournamentId: state.uri.queryParameters['tournamentId'],
+            tournamentTitle:
+                state.uri.queryParameters['tournament'] ??
+                'Tournament registration',
+            amount: state.uri.queryParameters['amount'] ?? '—',
+            reference: state.uri.queryParameters['reference'],
+          );
         },
       ),
       GoRoute(
