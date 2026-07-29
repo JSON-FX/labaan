@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:labaan/core/data/providers.dart';
+import 'package:labaan/core/data/repos.dart';
 import 'package:labaan/core/theme/theme.dart';
+import 'package:labaan/features/identity/phone_sign_in_screen.dart';
 
 /// Point the test surface at a modern iPhone-ish viewport. Default test
 /// surface is 800×600 which is too short for our vertically-laid onboarding
@@ -41,11 +44,20 @@ Widget hostScreen(Widget child) {
 
 /// Host a widget under a mini go_router with a single named route so screens
 /// that call `context.push/go` don't blow up.
-Widget hostRoute(Widget child, {String path = '/'}) {
+Widget hostRoute(
+  Widget child, {
+  String path = '/',
+  AuthRepo? authRepo,
+  ProfileRepo? profileRepo,
+}) {
   final router = GoRouter(
     initialLocation: path,
     routes: [
       GoRoute(path: path, builder: (_, _) => child),
+      GoRoute(
+        path: '/phone-sign-in',
+        builder: (_, _) => const PhoneSignInScreen(),
+      ),
       // Sink for any nav the screen might attempt.
       GoRoute(path: '/_sink/:name', builder: (_, _) => const _Sink()),
     ],
@@ -53,11 +65,18 @@ Widget hostRoute(Widget child, {String path = '/'}) {
     // uncovered nav paths.
     redirect: (context, state) {
       final loc = state.uri.path;
-      if (loc == path || loc.startsWith('/_sink')) return null;
+      if (loc == path || loc == '/phone-sign-in' || loc.startsWith('/_sink')) {
+        return null;
+      }
       return '/_sink/${Uri.encodeComponent(loc)}';
     },
   );
   return ProviderScope(
+    overrides: [
+      if (authRepo != null) authRepoProvider.overrideWithValue(authRepo),
+      if (profileRepo != null)
+        profileRepoProvider.overrideWithValue(profileRepo),
+    ],
     child: MaterialApp.router(
       theme: LbTheme.dark,
       routerConfig: router,

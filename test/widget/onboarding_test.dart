@@ -25,21 +25,15 @@ void main() {
     expect(find.text('GAB-REGULATED · COMPLIANT'), findsOneWidget);
   });
 
-  testWidgets('tapping phone CTA disables the other buttons during in-flight', (
-    tester,
-  ) async {
+  testWidgets('tapping phone CTA opens the OTP flow', (tester) async {
     setPhoneViewport(tester);
     await tester.pumpWidget(hostRoute(const OnboardingScreen()));
     await tester.pump();
 
     await tester.tap(find.text('CONTINUE WITH PHONE'));
-    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
 
-    // "Signing in…" label swaps in for the phone button.
-    expect(find.text('SIGNING IN…'), findsOneWidget);
-
-    // Let the mock auth's 520ms write latency drain so no pending Timer
-    // survives the test teardown.
-    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Continue with phone'), findsOneWidget);
+    expect(find.text('Your mobile number'), findsOneWidget);
   });
 }

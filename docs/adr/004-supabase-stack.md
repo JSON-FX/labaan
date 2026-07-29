@@ -1,4 +1,4 @@
-# ADR 004 — Supabase + PayMongo + Upstash serverless stack
+# ADR 004 — Firebase Auth + Supabase + PayMongo + Upstash serverless stack
 
 **Status:** Accepted (mirrors spec §8)
 **Date:** 2026-07-27
@@ -19,7 +19,7 @@ non-obvious mobile-side consequences.
 | Layer | Tech | Mobile-side impact |
 |---|---|---|
 | DB | Supabase Postgres | Row-Level Security (spec §11) enforced at DB — the mobile client can hit the DB directly with the anon key and RLS blocks unauthorized reads. |
-| Auth | Supabase Auth | OAuth (Google/Facebook) + phone OTP built-in. JWT includes the user's role so RLS policies can read it. |
+| Auth | Firebase Auth + Supabase third-party Auth | Firebase provides Google and phone sign-in. Its ID token is passed to Supabase; `profiles.firebase_uid` maps the Firebase subject to the UUID used by application tables and RLS. |
 | Realtime | Supabase Realtime | Bracket updates via WebSocket, scoped per `tournament_id` (spec §9.3). Riverpod `StreamProvider.autoDispose` ensures we unsubscribe on nav. |
 | Storage | Supabase Storage | Match screenshots. Client uses pre-signed URLs (spec §11) — API server never touches bytes. |
 | Cache | Upstash Redis | Leaderboards + hot tournament lists. Mobile reads through an RPC or the materialized view; no direct Redis touch from Flutter. |

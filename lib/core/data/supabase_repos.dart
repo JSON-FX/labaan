@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/badges.dart';
@@ -9,7 +10,6 @@ import '../domain/tournament_status.dart';
 import '../domain/tournament_tier.dart';
 import 'models.dart';
 import 'repos.dart';
-import 'supabase_client.dart';
 
 /// Supabase adapters for the schema owned by the sibling
 /// `labaan-backend` project. Reads use PostgREST, live data uses Realtime,
@@ -51,27 +51,20 @@ Rank _rankFromRowValue(Map<String, dynamic> row) {
   );
 }
 
-UserRole _roleFromClaim(Object? value) => switch (value?.toString()) {
-  'super_admin' => UserRole.superAdmin,
-  'organizer' => UserRole.tournamentOrganizer,
-  'moderator' => UserRole.moderator,
-  'spectator' => UserRole.spectator,
-  _ => UserRole.player,
-};
-
 Map<String, dynamic> _map(Object? value) =>
     (value as Map).cast<String, dynamic>();
 
 LbUser _userFromProfile(
   Map<String, dynamic> row, {
-  User? authUser,
+  String email = '',
+  String? phone,
   UserRole role = UserRole.player,
 }) {
   return LbUser(
     id: row['id'] as String,
     username: row['username'] as String,
-    email: authUser?.email ?? '',
-    phone: authUser?.phone,
+    email: email,
+    phone: phone,
     region: row['region'] as String?,
     avatarUrl: row['avatar_url'] as String?,
     role: role,
@@ -224,128 +217,6 @@ Map<String, dynamic> _functionData(FunctionResponse response) {
   if (body is Map && body['data'] is Map) return _map(body['data']);
   if (body is Map) return body.cast<String, dynamic>();
   throw StateError('Backend function returned an invalid response');
-}
-
-class SupabaseAuthRepo implements AuthRepo {
-  SupabaseAuthRepo(this._client);
-  final SupabaseClient _client;
-
-  @override
-  Stream<LbUser?> authStateChanges() async* {
-    final initial = await currentUser();
-    yield initial;
-    await for (final event in _client.auth.onAuthStateChange) {
-      final user = event.session?.user;
-      yield user == null ? null : await _loadProfile(user);
-    }
-  }
-
-  Future<LbUser?> _loadProfile(User authUser) async {
-    final row = await _client
-        .from('profiles')
-        .select()
-        .eq('id', authUser.id)
-        .maybeSingle();
-    if (row == null) return null;
-    return _userFromProfile(
-      row,
-      authUser: authUser,
-      role: _roleFromClaim(authUser.appMetadata['user_role']),
-    );
-  }
-
-  @override
-  Future<LbUser?> currentUser() async {
-    final user = _client.auth.currentUser;
-    return user == null ? null : _loadProfile(user);
-  }
-
-  Future<LbUser> _signInWithOAuth(OAuthProvider provider) async {
-    final authEvent = _client.auth.onAuthStateChange.firstWhere(
-      (event) => event.session?.user != null,
-    );
-    final opened = await _client.auth.signInWithOAuth(
-      provider,
-      redirectTo: Lb.oauthRedirectUrl,
-    );
-    if (!opened) throw AuthException('Could not open the sign-in page');
-    final event = await authEvent.timeout(const Duration(minutes: 3));
-    final user = event.session!.user;
-    final profile = await _loadProfile(user);
-    if (profile == null) throw AuthException('Profile was not created');
-    return profile;
-  }
-
-  @override
-  Future<LbUser> signInWithGoogle() => _signInWithOAuth(OAuthProvider.google);
-
-  @override
-  Future<LbUser> signInWithFacebook() =>
-      _signInWithOAuth(OAuthProvider.facebook);
-
-  @override
-  Future<LbUser> signInWithPhone(String phoneE164) async {
-    await requestPhoneOtp(phoneE164);
-    throw UnimplementedError(
-      'OTP requested. Complete sign-in on the phone verification screen.',
-    );
-  }
-
-  @override
-  Future<LbUser> signInForTesting() async {
-    final response = await _client.auth.signInWithPassword(
-      email: 'tonton@seed.labaan.test',
-      password: 'Labaan-Test-Only-2026!',
-    );
-    final user = response.user;
-    if (user == null) throw AuthException('Development sign-in failed');
-    final profile = await _loadProfile(user);
-    if (profile == null) throw AuthException('Seed profile was not found');
-    return profile;
-  }
-
-  @override
-  Future<void> requestPhoneOtp(String phoneE164) =>
-      _client.auth.signInWithOtp(phone: phoneE164);
-
-  @override
-  Future<LbUser> verifyPhoneOtp({
-    required String phoneE164,
-    required String token,
-  }) async {
-    final response = await _client.auth.verifyOTP(
-      phone: phoneE164,
-      token: token,
-      type: OtpType.sms,
-    );
-    final user = response.user;
-    if (user == null) throw AuthException('OTP verification failed');
-    final profile = await _loadProfile(user);
-    if (profile == null) throw AuthException('Profile was not created');
-    return profile;
-  }
-
-  @override
-  Future<void> completeFirstRunSetup({
-    required String username,
-    required String region,
-    required List<String> games,
-  }) async {
-    final id = _client.auth.currentUser?.id;
-    if (id == null) throw AuthException('Not signed in');
-    await _client
-        .from('profiles')
-        .update({
-          'username': username,
-          'region': region,
-          'games': games,
-          'has_completed_setup': true,
-        })
-        .eq('id', id);
-  }
-
-  @override
-  Future<void> signOut() => _client.auth.signOut();
 }
 
 const _tournamentSelect =
@@ -580,16 +451,30 @@ class SupabaseRegistrationRepo implements RegistrationRepo {
     required PayMethod method,
     required String captchaToken,
   }) async {
-    final response = await _client.functions.invoke(
+    final reservationResponse = await _client.functions.invoke(
       'registration-reserve',
+      body: {'tournamentId': tournamentId, 'teamId': ?teamId},
+    );
+    final reservation = _registrationFromRow(
+      _functionData(reservationResponse),
+    );
+    if (reservation.paymentStatus == RegistrationPaymentStatus.paid) {
+      return reservation;
+    }
+
+    final idempotencyKey =
+        '$userId:$tournamentId:${DateTime.now().microsecondsSinceEpoch}';
+    final paymentResponse = await _client.functions.invoke(
+      'payments-create-intent',
+      headers: {'Idempotency-Key': idempotencyKey},
       body: {
-        'tournamentId': tournamentId,
-        'teamId': ?teamId,
-        'idempotencyKey':
-            '$userId:$tournamentId:${DateTime.now().microsecondsSinceEpoch}',
+        'registrationId': reservation.id,
+        'method': method.name,
+        'idempotencyKey': idempotencyKey,
       },
     );
-    return _registrationFromRow(_functionData(response));
+    final paymentData = _functionData(paymentResponse);
+    return _registrationFromRow(_map(paymentData['registration']));
   }
 
   @override
@@ -620,7 +505,7 @@ class SupabaseResultsRepo implements ResultsRepo {
     final signed = await _client.storage
         .from('match-screenshots')
         .createSignedUploadUrl(
-          '${_client.auth.currentUser?.id ?? 'unknown'}/$matchId.jpg',
+          '${firebase.FirebaseAuth.instance.currentUser?.uid ?? 'unknown'}/$matchId.jpg',
         );
     return signed.signedUrl;
   }
@@ -673,9 +558,8 @@ class SupabaseProfileRepo implements ProfileRepo {
     final rankRow = responses[1] as Map<String, dynamic>?;
     final badges = responses[2] as List<dynamic>;
     final memberships = responses[3] as List<dynamic>;
-    final authUser = _client.auth.currentUser?.id == userId
-        ? _client.auth.currentUser
-        : null;
+    final authUser = firebase.FirebaseAuth.instance.currentUser;
+    final isCurrentUser = authUser?.uid == profile['firebase_uid'];
     final rank = rankRow == null
         ? LbUserRank(
             userId: userId,
@@ -686,7 +570,11 @@ class SupabaseProfileRepo implements ProfileRepo {
         : _rankFromRow(rankRow);
     final losses = (rankRow?['total_losses'] as num?)?.toInt() ?? 0;
     return LbPlayerProfile(
-      user: _userFromProfile(profile, authUser: authUser),
+      user: _userFromProfile(
+        profile,
+        email: isCurrentUser ? authUser?.email ?? '' : '',
+        phone: isCurrentUser ? authUser?.phoneNumber : null,
+      ),
       rank: rank,
       badges: [
         for (final row in badges)
@@ -719,8 +607,90 @@ class SupabaseProfileRepo implements ProfileRepo {
       .eq('id', userId);
 
   @override
-  Future<void> updateRegion(String userId, String region) =>
-      _client.from('profiles').update({'region': region}).eq('id', userId);
+  Future<void> updateIdentity({
+    required String userId,
+    required String username,
+    required String region,
+    required List<String> games,
+  }) => _client
+      .from('profiles')
+      .update({'username': username, 'region': region, 'games': games})
+      .eq('id', userId);
+}
+
+class SupabaseSettingsRepo implements SettingsRepo {
+  SupabaseSettingsRepo(this._client);
+  final SupabaseClient _client;
+
+  @override
+  Future<LbNotificationPreferences> notificationPreferences(
+    String userId,
+  ) async {
+    final row = await _client
+        .from('user_notification_preferences')
+        .select()
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (row == null) return LbNotificationPreferences.defaults();
+    final defaults = LbNotificationPreferences.defaults();
+    return LbNotificationPreferences(
+      push: _preferenceMap(row['push_preferences'], defaults.push),
+      email: _preferenceMap(row['email_preferences'], defaults.email),
+    );
+  }
+
+  Map<NotifKind, bool> _preferenceMap(
+    dynamic value,
+    Map<NotifKind, bool> defaults,
+  ) {
+    final json = (value as Map?)?.cast<String, dynamic>() ?? const {};
+    return {
+      for (final kind in NotifKind.values)
+        kind: (json[kind.name] as bool?) ?? defaults[kind]!,
+    };
+  }
+
+  Map<String, bool> _preferenceJson(Map<NotifKind, bool> values) => {
+    for (final entry in values.entries) entry.key.name: entry.value,
+  };
+
+  @override
+  Future<void> saveNotificationPreferences(
+    String userId,
+    LbNotificationPreferences preferences,
+  ) => _client.from('user_notification_preferences').upsert({
+    'user_id': userId,
+    'push_preferences': _preferenceJson(preferences.push),
+    'email_preferences': _preferenceJson(preferences.email),
+  });
+
+  @override
+  Future<LbPayoutAccount?> payoutAccount(String userId) async {
+    final row = await _client
+        .from('payout_accounts')
+        .select()
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (row == null) return null;
+    return LbPayoutAccount(
+      provider: row['provider'] as String,
+      accountName: row['account_name'] as String,
+      mobileNumber: row['mobile_number'] as String,
+    );
+  }
+
+  @override
+  Future<void> savePayoutAccount(String userId, LbPayoutAccount account) =>
+      _client.from('payout_accounts').upsert({
+        'user_id': userId,
+        'provider': account.provider,
+        'account_name': account.accountName.trim(),
+        'mobile_number': account.mobileNumber,
+      });
+
+  @override
+  Future<void> deletePayoutAccount(String userId) =>
+      _client.from('payout_accounts').delete().eq('user_id', userId);
 }
 
 class SupabaseTeamsRepo implements TeamsRepo {

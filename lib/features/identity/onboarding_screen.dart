@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
-import '../../core/data/supabase_client.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/slant_button.dart';
@@ -39,10 +38,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _signIn(String provider) async {
-    final bypassPhone = provider == 'phone' && Lb.phoneAuthBypass;
-    if (provider == 'phone' &&
-        !bypassPhone &&
-        ref.read(backendEnabledProvider)) {
+    if (provider == 'phone') {
       context.push('/phone-sign-in');
       return;
     }
@@ -59,16 +55,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         case 'facebook':
           signedIn = await repo.signInWithFacebook();
         case 'phone':
-          signedIn = bypassPhone
-              ? await repo.signInForTesting()
-              : await repo.signInWithPhone('+639170000000');
+          throw StateError('Phone sign-in must use the verification screen.');
       }
       if (!mounted) return;
-      context.go(
-        bypassPhone
-            ? '/home'
-            : (signedIn.hasCompletedSetup ? '/home' : '/setup'),
-      );
+      context.go(signedIn.hasCompletedSetup ? '/home' : '/setup');
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

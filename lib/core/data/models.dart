@@ -46,14 +46,16 @@ class LbUser {
 
   LbUser copyWith({
     String? username,
+    String? email,
+    String? phone,
     String? region,
     List<String>? games,
     bool? hasCompletedSetup,
   }) => LbUser(
     id: id,
     username: username ?? this.username,
-    email: email,
-    phone: phone,
+    email: email ?? this.email,
+    phone: phone ?? this.phone,
     region: region ?? this.region,
     avatarUrl: avatarUrl,
     createdAt: createdAt,
@@ -328,6 +330,51 @@ enum NotifKind {
   resultVerified,
   disputeOpened,
   payoutReceived,
+}
+
+@immutable
+class LbNotificationPreferences {
+  const LbNotificationPreferences({required this.push, required this.email});
+
+  factory LbNotificationPreferences.defaults() => LbNotificationPreferences(
+    push: {for (final kind in NotifKind.values) kind: true},
+    email: {
+      for (final kind in NotifKind.values)
+        kind: const {
+          NotifKind.rankUp,
+          NotifKind.disputeOpened,
+          NotifKind.payoutReceived,
+        }.contains(kind),
+    },
+  );
+
+  final Map<NotifKind, bool> push;
+  final Map<NotifKind, bool> email;
+
+  LbNotificationPreferences copyWith({
+    Map<NotifKind, bool>? push,
+    Map<NotifKind, bool>? email,
+  }) => LbNotificationPreferences(
+    push: push ?? this.push,
+    email: email ?? this.email,
+  );
+}
+
+@immutable
+class LbPayoutAccount {
+  const LbPayoutAccount({
+    required this.provider,
+    required this.accountName,
+    required this.mobileNumber,
+  });
+
+  final String provider;
+  final String accountName;
+  final String mobileNumber;
+
+  String get maskedNumber => mobileNumber.length < 4
+      ? mobileNumber
+      : '••${mobileNumber.substring(mobileNumber.length - 4)}';
 }
 
 @immutable

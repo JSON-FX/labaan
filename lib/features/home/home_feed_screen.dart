@@ -28,8 +28,14 @@ class HomeFeedScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value ?? LbFixtures.me;
-    final userRank = LbFixtures.ranks[user.id];
+    final userState = ref.watch(currentUserProvider);
+    final user = userState.value;
+    if (user == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    final userRank = ref.watch(profileByIdProvider(user.id)).value?.rank;
     final feed = ref.watch(homeFeedForUserProvider(user.id));
 
     return Scaffold(
@@ -160,17 +166,19 @@ class _GreetingBar extends StatelessWidget {
             ],
           ),
         ),
-        _NotificationBell(),
+        _NotificationBell(userId: user.id),
       ],
     );
   }
 }
 
 class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell({required this.userId});
+  final String userId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value ?? LbFixtures.me;
-    final notifs = ref.watch(notificationsProvider(user.id));
+    final notifs = ref.watch(notificationsProvider(userId));
     final unread = notifs.when(
       data: (list) => list.any((n) => !n.isRead),
       loading: () => false,

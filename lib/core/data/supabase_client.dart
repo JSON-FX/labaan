@@ -1,8 +1,12 @@
+import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Supabase bootstrap for the Labaan mobile app.
 ///
-/// Reads credentials from `--dart-define`:
+/// Uses the hosted development backend by default. Credentials can be
+/// overridden with `--dart-define`:
 /// ```
 /// flutter run --dart-define=SUPABASE_URL=https://xxx.supabase.co \
 ///             --dart-define=SUPABASE_ANON_KEY=eyJ...
@@ -15,20 +19,30 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class Lb {
   Lb._();
 
-  static const _url = String.fromEnvironment('SUPABASE_URL');
-  static const _anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-  static const phoneAuthBypass = bool.fromEnvironment(
-    'BYPASS_PHONE_AUTH',
-    defaultValue: true,
+  static const _url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://xmbfzcgejpzvgrfvvfyi.supabase.co',
   );
-  static const oauthRedirectUrl = 'com.labaan.labaan://login-callback';
+  static const _anonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'sb_publishable_4n8s3GgG8LQwKuTUR6aJmA_E2SH_3qn',
+  );
+  static const _forceMocks = bool.fromEnvironment('USE_MOCK_BACKEND');
 
   static bool get configured => _url.isNotEmpty && _anonKey.isNotEmpty;
-  static bool get useSupabase => configured;
+  static bool get _isAutomatedTest =>
+      Platform.environment['FLUTTER_TEST'] == 'true';
+  static bool get useSupabase =>
+      configured && !_forceMocks && !_isAutomatedTest;
 
   static Future<void> init() async {
-    if (!configured) return;
-    await Supabase.initialize(url: _url, publishableKey: _anonKey);
+    if (!useSupabase) return;
+    await Supabase.initialize(
+      url: _url,
+      publishableKey: _anonKey,
+      accessToken: () async =>
+          await FirebaseAuth.instance.currentUser?.getIdToken(),
+    );
   }
 
   static SupabaseClient get client => Supabase.instance.client;

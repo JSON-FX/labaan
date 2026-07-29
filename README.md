@@ -18,34 +18,56 @@ document.
 # Prereqs: Flutter stable, Xcode (for iOS), Android Studio (for Android).
 
 flutter pub get
-flutter test              # 58 tests, unit + widget
+flutter test              # unit + widget tests
 flutter analyze           # should be clean
-flutter run               # opens the app on your default device
+flutter run --flavor dev  # iOS development/testing target
 ```
 
-The app automatically selects the real repositories when both Supabase
-values are present. Copy the example without committing the resulting key
-file:
+iOS has two shared schemes:
+
+| Scheme | Bundle ID | Purpose |
+|---|---|---|
+| `dev` | `com.labaan.labaan-dev` | Simulator, device development, and integration tests |
+| `prod` | `com.labaan.labaan` | Production runs and archives |
+
+The Dev scheme uses its own registered Firebase iOS app and displays as
+**Labaan Dev**, so it can coexist with production. Use `--flavor dev` for all
+iOS development and testing; production must be selected explicitly with
+`--flavor prod`.
+
+Normal app launches use the hosted development Supabase project. Its
+publishable client key is intentionally part of the app configuration;
+database access is enforced by Row-Level Security.
+
+To point the app at a different Supabase project, copy the example without
+committing the resulting config file:
 
 ```bash
 cp config/backend.example.json config/backend.json
-# Fill in the project's anon/publishable key, then:
-flutter run --dart-define-from-file=config/backend.json
+# Fill in the other project's URL and anon/publishable key, then:
+flutter run --flavor dev --dart-define-from-file=config/backend.json
 ```
 
-Without those defines, [`Lb.init()`](lib/core/data/supabase_client.dart) is a
-no-op and the app runs entirely off in-memory fixtures.
+In-memory fixtures are limited to automated tests or an explicit mock launch:
 
-For OAuth, add `com.labaan.labaan://login-callback` to the Supabase
-Authentication **Additional Redirect URLs**. iOS and Android are already
-registered to receive that callback.
+```bash
+flutter run --flavor dev --dart-define=USE_MOCK_BACKEND=true
+```
 
-During UI testing, **Continue with phone** signs into the development-only
-seed account `@tonton26` and opens `/home` without showing an OTP. With
-Supabase configured this is a genuine authenticated session, so the app reads
-the seeded database through RLS; in mock mode it uses the matching fixture
-identity. Set `BYPASS_PHONE_AUTH` to `false` to exercise real phone OTP.
-Never deploy `supabase/seed.sql` or enable the bypass in production.
+Firebase project `labaan-f3fa6` owns mobile authentication. Google and phone
+sign-in use Firebase Auth; the resulting Firebase ID token is passed to
+Supabase's third-party Auth integration. Supabase maps the Firebase UID to a
+generated `profiles.id` UUID, so existing app tables and routes keep using
+short database IDs.
+
+**Google** and **Phone** are enabled under Firebase Console → Authentication,
+and the SMS region policy allows the Philippines. For Android, the project's
+debug SHA-1 and SHA-256 certificates are registered. The iOS Google client ID
+and reversed-client URL scheme are included in the checked-in configuration.
+
+There is no phone-auth bypass. **Continue with phone** always opens the OTP
+screen and uses Firebase's real verification flow. Use Firebase test phone
+numbers during development to avoid sending SMS.
 
 To run the app against the seeded local backend on an iOS simulator:
 
@@ -55,7 +77,8 @@ npm run db:start
 npm run db:reset
 
 cd ../labaan
-flutter run --dart-define-from-file=config/local_backend.json
+flutter run --flavor dev \
+  --dart-define-from-file=config/local_backend.json
 ```
 
 `config/local_backend.json` is ignored by Git and uses Supabase's standard
@@ -105,8 +128,8 @@ Repository interfaces (lib/core/data/repos.dart)
     ↓
 ┌───────────────────┬──────────────────────┐
 │ MockRepository    │ SupabaseRepository   │
-│ (default; fixture-│ (real backend when   │
-│ backed; instant)  │ credentials present) │
+│ (tests / explicit │ (default for normal  │
+│ mock mode)        │ app launches)        │
 └───────────────────┴──────────────────────┘
 ```
 
@@ -125,16 +148,17 @@ into the app's UI models.
 1. In `../labaan-backend`, start/reset Supabase or push its migrations to
    project `xmbfzcgejpzvgrfvvfyi`.
 2. Apply all backend migrations, including
-   `0019_mobile_profile_fields.sql`.
-3. Enable the desired Auth providers and add the OAuth callback URL above.
-4. Fill in `config/backend.json` and run with
-   `--dart-define-from-file=config/backend.json`.
+   `0022_firebase_identity_bridge.sql`.
+3. In Supabase Authentication → Third-Party Auth, register Firebase project
+   `labaan-f3fa6`.
+4. Enable Google and Phone providers in Firebase Authentication.
+5. Run the app normally. Use `config/backend.json` only to override the
+   checked-in hosted development configuration.
 
-Table reads, Realtime, profile updates, team creation, and authentication
-are connected. The backend's privileged registration, payment, result, and
-dispute Edge Functions currently return `501 not_implemented`; those flows
-will become live when their backend bodies land. Team invitations also have
-no backend command yet.
+Table reads, Realtime, profile updates, team creation, Firebase
+authentication, registration reservation, and the development PayMongo mock
+are connected. Result and dispute Edge Functions remain
+`501 not_implemented`. Team invitations also have no backend command yet.
 
 ## Key spec facts baked in
 
@@ -168,6 +192,17 @@ flutter test                            # everything
 flutter test test/unit                  # domain math only
 flutter test test/widget                # per-screen
 flutter test test/widget/home_feed_test.dart   # one file
+```
+
+The real Firebase phone → Supabase profile bridge also has an opt-in simulator
+test. Use a Firebase fictional phone number and code; never commit them:
+
+```bash
+flutter test integration_test/firebase_phone_auth_test.dart \
+  -d <simulator-id> \
+  --flavor dev \
+  --dart-define=FIREBASE_TEST_PHONE=<e164-number> \
+  --dart-define=FIREBASE_TEST_CODE=<six-digit-code>
 ```
 
 ### Not yet covered

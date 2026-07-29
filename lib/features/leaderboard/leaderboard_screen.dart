@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/providers.dart';
 import '../../core/domain/ranks.dart';
 import '../../core/theme/colors.dart';
@@ -35,8 +34,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId =
-        ref.watch(currentUserProvider).value?.id ?? LbFixtures.me.id;
+    final currentUser = ref.watch(currentUserProvider).value;
+    if (currentUser == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    final currentUserId = currentUser.id;
     return Scaffold(
       appBar: AppBar(title: const Text('Leaderboard')),
       body: Column(

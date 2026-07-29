@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:labaan/core/data/mock_repos.dart';
 import 'package:labaan/features/identity/phone_sign_in_screen.dart';
 
 import '_helpers.dart';
@@ -7,7 +8,12 @@ import '_helpers.dart';
 void main() {
   testWidgets('requests and verifies a six-digit phone OTP', (tester) async {
     setPhoneViewport(tester);
-    await tester.pumpWidget(hostRoute(const PhoneSignInScreen()));
+    await tester.pumpWidget(
+      hostRoute(
+        const PhoneSignInScreen(),
+        authRepo: MockAuthRepo(signedIn: false),
+      ),
+    );
     await tester.pump();
 
     await tester.enterText(

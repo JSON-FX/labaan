@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
 import '../../core/data/repos.dart';
@@ -35,7 +34,12 @@ class _MyTournamentsScreenState extends ConsumerState<MyTournamentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider).value ?? LbFixtures.me;
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
     final async = ref.watch(myTournamentsProvider(user.id));
 
     return Scaffold(

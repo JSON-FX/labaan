@@ -24,7 +24,13 @@ class NotificationsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.watch(currentUserProvider).value?.id ?? LbFixtures.me.id;
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) {
+      return const Scaffold(
+        body: SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+    final userId = user.id;
     final feed = ref.watch(notificationsProvider(userId));
     final repo = ref.read(notificationsRepoProvider);
 

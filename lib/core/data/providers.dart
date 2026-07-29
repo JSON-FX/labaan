@@ -1,16 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/ranks.dart';
-import 'fixtures.dart';
+import 'firebase_auth_repo.dart';
 import 'mock_repos.dart';
 import 'models.dart';
 import 'repos.dart';
 import 'supabase_client.dart';
 import 'supabase_repos.dart';
 
-/// Repository singletons select the real backend whenever Supabase
-/// credentials are present. With no dart-defines (including widget tests),
-/// the app remains fixture-backed.
+/// Repository singletons use the hosted backend for normal app runs.
+/// Automated tests and explicit `USE_MOCK_BACKEND=true` runs use fixtures.
 
 class BackendModeController extends Notifier<bool> {
   @override
@@ -25,7 +24,7 @@ final backendEnabledProvider = NotifierProvider<BackendModeController, bool>(
 
 final authRepoProvider = Provider<AuthRepo>(
   (ref) => ref.watch(backendEnabledProvider)
-      ? SupabaseAuthRepo(Lb.client)
+      ? FirebaseAuthRepo(Lb.client)
       : MockAuthRepo(),
 );
 
@@ -65,6 +64,12 @@ final profileRepoProvider = Provider<ProfileRepo>(
       : MockProfileRepo(),
 );
 
+final settingsRepoProvider = Provider<SettingsRepo>(
+  (ref) => ref.watch(backendEnabledProvider)
+      ? SupabaseSettingsRepo(Lb.client)
+      : MockSettingsRepo(),
+);
+
 final teamsRepoProvider = Provider<TeamsRepo>(
   (ref) => ref.watch(backendEnabledProvider)
       ? SupabaseTeamsRepo(Lb.client)
@@ -92,30 +97,23 @@ final notificationsRepoProvider = Provider<NotificationsRepo>(
 // ── Session ────────────────────────────────────────────────────────────────
 
 /// Currently signed-in user. Reactive; screens can watch to react to sign-in
-/// / sign-out. Emits the fixture "me" once the mock auth signs in; null
-/// before that.
+/// and sign-out.
 final currentUserProvider = StreamProvider<LbUser?>((ref) {
   final repo = ref.watch(authRepoProvider);
   return repo.authStateChanges();
 });
 
-/// Convenience accessor for the user id — panics if unauthenticated. Use
-/// only in screens gated behind auth (i.e., inside the app shell).
-String requireUserId(WidgetRef ref) {
-  final user = ref.watch(currentUserProvider).value ?? LbFixtures.me;
-  return user.id;
-}
+final linkedProvidersProvider = FutureProvider.autoDispose<Set<String>>((ref) {
+  return ref.watch(authRepoProvider).linkedProviders();
+});
 
 // ── Screen-scoped data providers ───────────────────────────────────────────
 
 final homeFeedProvider = FutureProvider.autoDispose<LbHomeFeed>((ref) async {
   final repo = ref.watch(tournamentsRepoProvider);
   final user = await ref.watch(currentUserProvider.future);
-  if (user == null && ref.watch(backendEnabledProvider)) {
-    throw StateError('Authentication required');
-  }
-  final userId = user?.id ?? LbFixtures.me.id;
-  return repo.homeFeed(userId: userId);
+  if (user == null) throw StateError('Authentication required');
+  return repo.homeFeed(userId: user.id);
 });
 
 final homeFeedForUserProvider = FutureProvider.autoDispose
@@ -173,6 +171,16 @@ class BrowseQuery {
 final profileByIdProvider = FutureProvider.autoDispose
     .family<LbPlayerProfile, String>((ref, id) {
       return ref.watch(profileRepoProvider).byId(id);
+    });
+
+final notificationPreferencesProvider = FutureProvider.autoDispose
+    .family<LbNotificationPreferences, String>((ref, userId) {
+      return ref.watch(settingsRepoProvider).notificationPreferences(userId);
+    });
+
+final payoutAccountProvider = FutureProvider.autoDispose
+    .family<LbPayoutAccount?, String>((ref, userId) {
+      return ref.watch(settingsRepoProvider).payoutAccount(userId);
     });
 
 final teamByIdProvider = FutureProvider.autoDispose.family<LbTeam, String>((

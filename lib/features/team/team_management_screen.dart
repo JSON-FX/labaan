@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
 import '../../core/domain/ranks.dart';
@@ -93,8 +92,8 @@ class TeamManagementScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             _LeaveTeamCard(
               onLeave: () async {
-                final user =
-                    ref.read(currentUserProvider).value ?? LbFixtures.me;
+                final user = ref.read(currentUserProvider).value;
+                if (user == null) return;
                 await ref
                     .read(teamsRepoProvider)
                     .leaveTeam(teamId: teamId, userId: user.id);

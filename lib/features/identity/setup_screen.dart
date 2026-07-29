@@ -75,6 +75,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             games: _games.toList(),
           );
       if (!mounted) return;
+      // Firebase auth itself did not change, but its mapped Supabase profile
+      // did. Restart the session stream so Home reads the completed profile.
+      ref.invalidate(currentUserProvider);
       context.go('/home');
     } catch (_) {
       if (!mounted) return;

@@ -15,13 +15,19 @@ abstract class AuthRepo {
   Future<LbUser?> currentUser();
   Future<LbUser> signInWithGoogle();
   Future<LbUser> signInWithFacebook();
-  Future<LbUser> signInWithPhone(String phoneE164);
-  Future<LbUser> signInForTesting();
   Future<void> requestPhoneOtp(String phoneE164);
   Future<LbUser> verifyPhoneOtp({
     required String phoneE164,
     required String token,
   });
+  Future<Set<String>> linkedProviders();
+  Future<void> linkGoogle();
+  Future<void> requestPhoneLink(String phoneE164);
+  Future<void> verifyPhoneLink({
+    required String phoneE164,
+    required String token,
+  });
+  Future<void> requestEmailChange(String email);
   Future<void> completeFirstRunSetup({
     required String username,
     required String region,
@@ -156,7 +162,23 @@ abstract class ProfileRepo {
   Future<LbPlayerProfile> byUsername(String username);
   Future<LbPlayerProfile> byId(String userId);
   Future<void> updateAvatar(String userId, String assetUri);
-  Future<void> updateRegion(String userId, String region);
+  Future<void> updateIdentity({
+    required String userId,
+    required String username,
+    required String region,
+    required List<String> games,
+  });
+}
+
+abstract class SettingsRepo {
+  Future<LbNotificationPreferences> notificationPreferences(String userId);
+  Future<void> saveNotificationPreferences(
+    String userId,
+    LbNotificationPreferences preferences,
+  );
+  Future<LbPayoutAccount?> payoutAccount(String userId);
+  Future<void> savePayoutAccount(String userId, LbPayoutAccount account);
+  Future<void> deletePayoutAccount(String userId);
 }
 
 /// Team management — create, invite, roster, leave.

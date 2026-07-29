@@ -14,8 +14,13 @@ Future<T> _delay<T>(T value, [Duration d = _kReadLatency]) =>
     Future.delayed(d, () => value);
 
 class MockAuthRepo implements AuthRepo {
+  MockAuthRepo({LbUser? initialUser, bool signedIn = true})
+    : _current = signedIn ? (initialUser ?? LbFixtures.me) : null,
+      _providers = signedIn ? {'google.com'} : <String>{};
+
   final _controller = StreamController<LbUser?>.broadcast();
   LbUser? _current;
+  final Set<String> _providers;
 
   /// True after any successful sign-in — so the second run through the app
   /// jumps straight to /home instead of forcing setup again. Simulates the
@@ -24,7 +29,10 @@ class MockAuthRepo implements AuthRepo {
   bool _setupCompletedOnce = false;
 
   @override
-  Stream<LbUser?> authStateChanges() => _controller.stream;
+  Stream<LbUser?> authStateChanges() async* {
+    yield _current;
+    yield* _controller.stream;
+  }
 
   @override
   Future<LbUser?> currentUser() async => _current;
@@ -36,17 +44,6 @@ class MockAuthRepo implements AuthRepo {
   Future<LbUser> signInWithFacebook() => _signIn();
 
   @override
-  Future<LbUser> signInWithPhone(String phoneE164) => _signIn();
-
-  @override
-  Future<LbUser> signInForTesting() async {
-    await Future<void>.delayed(_kWriteLatency);
-    _current = LbFixtures.me;
-    _controller.add(_current);
-    return _current!;
-  }
-
-  @override
   Future<void> requestPhoneOtp(String phoneE164) =>
       Future<void>.delayed(_kWriteLatency);
 
@@ -55,6 +52,35 @@ class MockAuthRepo implements AuthRepo {
     required String phoneE164,
     required String token,
   }) => _signIn();
+
+  @override
+  Future<Set<String>> linkedProviders() async => Set.unmodifiable(_providers);
+
+  @override
+  Future<void> linkGoogle() async {
+    await Future<void>.delayed(_kWriteLatency);
+    _providers.add('google.com');
+  }
+
+  @override
+  Future<void> requestPhoneLink(String phoneE164) =>
+      Future<void>.delayed(_kWriteLatency);
+
+  @override
+  Future<void> verifyPhoneLink({
+    required String phoneE164,
+    required String token,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    _providers.add('phone');
+    _current = _current?.copyWith(phone: phoneE164);
+    _controller.add(_current);
+  }
+
+  @override
+  Future<void> requestEmailChange(String email) async {
+    await Future<void>.delayed(_kWriteLatency);
+  }
 
   Future<LbUser> _signIn() async {
     await Future<void>.delayed(_kWriteLatency);
@@ -256,16 +282,21 @@ class MockRegistrationRepo implements RegistrationRepo {
     await Future<void>.delayed(_kWriteLatency);
     final t = LbFixtures.allTournaments.firstWhere((t) => t.id == tournamentId);
     final commission = (t.entryFeePhp * t.commissionRate).round();
+    final status = switch (method) {
+      PayMethod.gcash => RegistrationPaymentStatus.paid,
+      PayMethod.maya => RegistrationPaymentStatus.pending,
+      PayMethod.card => RegistrationPaymentStatus.failed,
+    };
     return LbRegistration(
       id: 'reg_${DateTime.fromMillisecondsSinceEpoch(0).microsecond}',
       tournamentId: tournamentId,
       userId: userId,
       teamId: teamId,
-      paymentStatus: RegistrationPaymentStatus.paid,
-      paidAt: LbFixtures.now,
+      paymentStatus: status,
+      paidAt: status == RegistrationPaymentStatus.paid ? LbFixtures.now : null,
       amountPhp: t.entryFeePhp,
       commissionCollectedPhp: commission,
-      paymongoRef: 'pi_mock',
+      paymongoRef: 'paymongo_mock_${method.name}',
     );
   }
 
@@ -307,6 +338,11 @@ class MockResultsRepo implements ResultsRepo {
 }
 
 class MockProfileRepo implements ProfileRepo {
+  MockProfileRepo({Map<String, LbPlayerProfile> profiles = const {}})
+    : _profiles = profiles;
+
+  final Map<String, LbPlayerProfile> _profiles;
+
   @override
   Future<LbPlayerProfile> byId(String userId) => _delay(_profileFor(userId));
 
@@ -317,6 +353,8 @@ class MockProfileRepo implements ProfileRepo {
   }
 
   LbPlayerProfile _profileFor(String userId) {
+    final supplied = _profiles[userId];
+    if (supplied != null) return supplied;
     final u = LbFixtures.allUsers.firstWhere((u) => u.id == userId);
     final rank = LbFixtures.ranks[userId]!;
     return LbPlayerProfile(
@@ -350,8 +388,47 @@ class MockProfileRepo implements ProfileRepo {
   }
 
   @override
-  Future<void> updateRegion(String userId, String region) async {
+  Future<void> updateIdentity({
+    required String userId,
+    required String username,
+    required String region,
+    required List<String> games,
+  }) async {
     await Future<void>.delayed(_kWriteLatency);
+  }
+}
+
+class MockSettingsRepo implements SettingsRepo {
+  LbNotificationPreferences _preferences = LbNotificationPreferences.defaults();
+  LbPayoutAccount? _payoutAccount;
+
+  @override
+  Future<LbNotificationPreferences> notificationPreferences(String userId) =>
+      _delay(_preferences);
+
+  @override
+  Future<void> saveNotificationPreferences(
+    String userId,
+    LbNotificationPreferences preferences,
+  ) async {
+    await Future<void>.delayed(_kWriteLatency);
+    _preferences = preferences;
+  }
+
+  @override
+  Future<LbPayoutAccount?> payoutAccount(String userId) =>
+      _delay(_payoutAccount);
+
+  @override
+  Future<void> savePayoutAccount(String userId, LbPayoutAccount account) async {
+    await Future<void>.delayed(_kWriteLatency);
+    _payoutAccount = account;
+  }
+
+  @override
+  Future<void> deletePayoutAccount(String userId) async {
+    await Future<void>.delayed(_kWriteLatency);
+    _payoutAccount = null;
   }
 }
 

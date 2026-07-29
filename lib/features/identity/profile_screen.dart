@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
 import '../../core/domain/badges.dart';
@@ -26,7 +25,13 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).value ?? LbFixtures.me;
+    final user = ref.watch(currentUserProvider).value;
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Profile')),
+        body: const _Skeleton(),
+      );
+    }
     final async = ref.watch(profileByIdProvider(user.id));
     final teamsAsync = ref.watch(teamsForUserProvider(user.id));
     return Scaffold(

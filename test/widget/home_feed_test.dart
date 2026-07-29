@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:labaan/core/data/mock_repos.dart';
+import 'package:labaan/core/data/models.dart';
 import 'package:labaan/features/home/home_feed_screen.dart';
 
 import '_helpers.dart';
@@ -37,5 +39,29 @@ void main() {
     expect(find.text('TEAM'), findsOneWidget);
     expect(find.text('WALLET'), findsOneWidget);
     expect(find.text('SUPPORT'), findsOneWidget);
+  });
+
+  testWidgets('renders the authenticated user instead of the fixture user', (
+    tester,
+  ) async {
+    setPhoneViewport(tester);
+    final user = LbUser(
+      id: 'firebase-user',
+      username: '@actualplayer',
+      email: '',
+      region: 'Cebu',
+      games: const ['MLBB'],
+      createdAt: DateTime(2026),
+    );
+    await tester.pumpWidget(
+      hostRoute(
+        const HomeFeedScreen(),
+        authRepo: MockAuthRepo(initialUser: user),
+      ),
+    );
+    await pumpAndSettleForData(tester);
+
+    expect(find.textContaining('@actualplayer'), findsOneWidget);
+    expect(find.textContaining('@tonton26'), findsNothing);
   });
 }

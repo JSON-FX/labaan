@@ -40,6 +40,12 @@ class _PhoneSignInScreenState extends ConsumerState<PhoneSignInScreen> {
       if (!_codeSent) {
         await auth.requestPhoneOtp(_phone);
         if (!mounted) return;
+        final autoVerifiedUser = await auth.currentUser();
+        if (!mounted) return;
+        if (autoVerifiedUser != null) {
+          context.go(autoVerifiedUser.hasCompletedSetup ? '/home' : '/setup');
+          return;
+        }
         setState(() => _codeSent = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Verification code sent.')),
