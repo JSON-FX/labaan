@@ -134,7 +134,11 @@ development environment, not merely drawn as screens.
       exact order/session retry reuse, provider idempotency, URL allow-listing,
       daily purchase limits, and uncertainty reconciliation safeguards
 - [x] Route signed PayMongo legacy and Hosted Checkout v2 events by explicit
-      financial purpose through a global replay receipt; valid top-up events
-      are queued for settlement without changing the wallet
+      financial purpose through a global replay receipt before purpose-specific
+      handling
+- [x] Settle verified PayMongo paid top-ups atomically into exactly one balanced
+      Credit grant; exact retries and same-payment sibling events reuse the
+      original wallet transaction, while mismatched economics or payment IDs
+      cannot issue value
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

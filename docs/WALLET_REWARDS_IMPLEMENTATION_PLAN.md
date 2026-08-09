@@ -341,8 +341,10 @@ roster and verified result.
       cutoff before provider idempotency expires.
 - [x] Route signed legacy and Hosted Checkout v2 webhook events through one
       global purpose-aware receipt, requiring top-up purpose/order/session and
-      provider environment agreement without granting Credits in the router.
-- [ ] Credit only after a verified, deduplicated paid event.
+      provider environment agreement before purpose-specific handling.
+- [x] Credit only after the stored signed paid Payment matches the immutable
+      order amount/currency; settle order, receipt, and one balanced Credit
+      grant atomically with exact- and sibling-event idempotency.
 - [ ] Handle pending, failure, expiry, refund, reversal, and duplicate capture.
 - [ ] Reuse the Flutter in-app checkout and native-wallet fallback on direct
       Android; add web checkout behavior.
