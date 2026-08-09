@@ -1,6 +1,6 @@
 # Labaan implementation checklist
 
-Last reviewed: 2026-08-04
+Last reviewed: 2026-08-09
 
 This is the working delivery checklist across the Flutter player app and the
 `labaan-backend` Supabase project. Checked items are usable against the hosted
@@ -91,3 +91,17 @@ development environment, not merely drawn as screens.
       licenses, and add visually reviewed Host/Support golden tests
 - [x] Enforce a repository-owned 59% line-coverage floor in CI
 - [ ] Separate organizer/moderator/admin web application
+
+## Wallet economy migration
+
+- [x] Preserve and publish the pre-wallet Flutter and backend checkpoints
+- [x] Create dedicated `codex/wallet-economy` branches in both repositories
+- [x] Define the append-only, double-entry `entry_credit` / `reward_point`
+      ledger with stable internal codes, per-player and system accounts,
+      idempotent posting, nonnegative player balances, RLS, and explicit grants
+- [x] Add pgTAP coverage, regenerate database types, and document ledger
+      invariants and posting rules
+- [ ] Seed spendable development balances and expose Wallet v2 reads
+- [ ] Replace per-registration payment with atomic Credit-funded entry/refund
+- [ ] Add PayMongo Credit top-ups and Apple IAP verification
+- [ ] Add tournament Victory Point rewards and Shop spending

@@ -1,6 +1,6 @@
 # Wallet, tournament rewards, and Shop implementation plan
 
-Status: Planning
+Status: In progress
 Created: 2026-08-08
 Applies to:
 
@@ -203,20 +203,20 @@ Proposed transaction types:
 
 Requirements:
 
-- [ ] Use integer units only; do not store wallet quantities as floating point.
-- [ ] Make ledger transactions and entries append-only.
-- [ ] Require entries in each ledger transaction to balance to zero.
+- [x] Use integer units only; do not store wallet quantities as floating point.
+- [x] Make ledger transactions and entries append-only.
+- [x] Require entries in each ledger transaction to balance to zero.
 - [ ] Use unique idempotency keys and unique provider transaction references.
-- [ ] Prevent normal operations from producing a negative player balance.
-- [ ] Lock affected wallet accounts during debits to prevent double-spending.
-- [ ] Do not expose direct balance or ledger mutation to clients.
-- [ ] Keep privileged functions out of exposed schemas when practical.
+- [x] Prevent normal operations from producing a negative player balance.
+- [x] Lock affected wallet accounts during debits to prevent double-spending.
+- [x] Do not expose direct balance or ledger mutation to clients.
+- [x] Keep privileged functions out of exposed schemas when practical.
 - [ ] Prefer `security invoker`; justify every `security definer`, set an empty
       search path, check the actor explicitly, and revoke default execution.
-- [ ] Enable RLS on every exposed table and add ownership-specific policies.
-- [ ] Add explicit Data API grants only where required; RLS and API exposure
+- [x] Enable RLS on every exposed table and add ownership-specific policies.
+- [x] Add explicit Data API grants only where required; RLS and API exposure
       are separate controls.
-- [ ] Run Supabase database advisors before finalizing migrations.
+- [x] Run Supabase database advisors before finalizing migrations.
 - [ ] Regenerate and reconcile database types, contracts, API docs, and tests.
 
 ### Read APIs
@@ -273,9 +273,9 @@ disbursement, and presents a cash-flow wallet rather than stored balances.
 
 ### Phase 0 - Decisions, approvals, and work isolation
 
-- [ ] Safely checkpoint the current dirty Flutter PayMongo branch.
-- [ ] Safely isolate the backend's current uncommitted shared-function changes.
-- [ ] Start wallet work on new `codex/` branches after those checkpoints.
+- [x] Safely checkpoint the current dirty Flutter PayMongo branch.
+- [x] Safely isolate the backend's current uncommitted shared-function changes.
+- [x] Start wallet work on new `codex/` branches after those checkpoints.
 - [ ] Finalize the open decisions in section 10.
 - [ ] Write player tournament rules and organizer sponsorship terms.
 - [ ] Request written PayMongo approval for player top-ups and organizer
@@ -288,12 +288,12 @@ depending on production provider approval.
 
 ### Phase 1 - Smallest vertical slice: seeded Credits to registration
 
-- [ ] Create wallet ledger migrations and pgTAP tests.
+- [x] Create wallet ledger migrations and pgTAP tests.
 - [ ] Seed development Credit and Victory Point accounts.
 - [ ] Implement authenticated wallet summary/history reads.
 - [ ] Implement atomic Credit-funded tournament registration.
 - [ ] Implement Credit refunds for cancellation.
-- [ ] Update generated backend types and contracts.
+- [x] Update generated backend types and contracts.
 - [ ] Update Flutter models and repositories.
 - [ ] Replace the payment-method registration UI with balance, cost, and
       post-entry balance.
