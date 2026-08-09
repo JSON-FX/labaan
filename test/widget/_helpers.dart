@@ -49,6 +49,8 @@ Widget hostRoute(
   String path = '/',
   AuthRepo? authRepo,
   ProfileRepo? profileRepo,
+  RegistrationRepo? registrationRepo,
+  WalletRepo? walletRepo,
 }) {
   final router = GoRouter(
     initialLocation: path,
@@ -76,6 +78,9 @@ Widget hostRoute(
       if (authRepo != null) authRepoProvider.overrideWithValue(authRepo),
       if (profileRepo != null)
         profileRepoProvider.overrideWithValue(profileRepo),
+      if (registrationRepo != null)
+        registrationRepoProvider.overrideWithValue(registrationRepo),
+      if (walletRepo != null) walletRepoProvider.overrideWithValue(walletRepo),
     ],
     child: MaterialApp.router(
       theme: LbTheme.dark,

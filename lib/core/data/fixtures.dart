@@ -215,13 +215,15 @@ class LbFixtures {
     tier: TournamentTier.premium,
     maxTeams: 16,
     registeredTeams: 6,
-    entryFeePhp: TournamentTier.premium.entryFeePhp,
-    commissionRate: TournamentTier.premium.commissionRate,
-    prizePoolPhp: 3000,
+    entryFeePhp: 0,
+    commissionRate: 0,
+    prizePoolPhp: 0,
     status: TournamentStatus.open,
     organizerId: 'org_cavite',
     startsAt: now.add(const Duration(days: 2)),
     createdAt: now.subtract(const Duration(days: 1)),
+    economyMode: TournamentEconomy.walletV2,
+    entryCreditCost: 250,
   );
 
   static final LbTournament qcGrind08 = LbTournament(

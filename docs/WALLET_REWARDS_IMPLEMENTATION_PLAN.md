@@ -55,11 +55,11 @@ Store product identifiers because the brand and display terminology may change.
 
 ### Entry Credits
 
-- [ ] Credits never expire.
-- [ ] Credits cannot be withdrawn or transferred.
-- [ ] Credits cannot be converted into Victory Points.
+- [x] Credits never expire.
+- [x] Credits cannot be withdrawn or transferred.
+- [x] Credits cannot be converted into Victory Points.
 - [ ] Credits are credited only after an authoritative provider confirmation.
-- [ ] Tournament cancellation returns Credits through a compensating ledger
+- [x] Tournament cancellation returns Credits through a compensating ledger
       transaction rather than editing the original debit.
 - [ ] Provider refunds and reversals remove the corresponding Credits through a
       new ledger transaction and create a review state if the balance is short.
@@ -253,21 +253,21 @@ The current implementation ties PayMongo payments directly to registrations,
 adds payment proceeds to a peso prize pool, performs external prize
 disbursement, and presents a cash-flow wallet rather than stored balances.
 
-- [ ] Preserve all existing payment, payment-event, disbursement, registration,
+- [x] Preserve all existing payment, payment-event, disbursement, registration,
       and payout records as immutable legacy history.
-- [ ] Do not rewrite old money values as Credits or Victory Points.
-- [ ] Add an explicit legacy/new economy marker to tournaments.
+- [x] Do not rewrite old money values as Credits or Victory Points.
+- [x] Add an explicit legacy/new economy marker to tournaments.
 - [ ] New-economy tournaments use Credit fees and reward rules.
 - [ ] Existing tournaments finish under their original model or are cancelled
       and reconciled before migration.
-- [ ] Stop peso prize-pool accrual for new-economy tournaments.
+- [x] Stop peso prize-pool accrual for new-economy tournaments.
 - [ ] Replace payout-account requirements with reward-wallet eligibility for
       new-economy tournaments.
 - [ ] Update bracket, ranking, and badge queries to use confirmed registration
       state instead of assuming `payment_status = 'paid'` forever.
 - [ ] Retire payout settings, peso earnings, and cash-prize language only after
       all legacy obligations are settled.
-- [ ] Keep old PayMongo registration checkout code behind a legacy path until
+- [x] Keep old PayMongo registration checkout code behind a legacy path until
       migration is complete, then remove it in a dedicated cleanup change.
 
 ## 7. Phased delivery tracker
@@ -292,13 +292,13 @@ depending on production provider approval.
 - [x] Create wallet ledger migrations and pgTAP tests.
 - [x] Seed development Credit and Victory Point accounts.
 - [x] Implement authenticated wallet summary/history reads.
-- [ ] Implement atomic Credit-funded tournament registration.
-- [ ] Implement Credit refunds for cancellation.
+- [x] Implement atomic Credit-funded tournament registration.
+- [x] Implement Credit refunds for cancellation.
 - [x] Update generated backend types and contracts.
 - [x] Update Flutter models and repositories.
-- [ ] Replace the payment-method registration UI with balance, cost, and
+- [x] Replace the payment-method registration UI with balance, cost, and
       post-entry balance.
-- [ ] Show insufficient-balance handling without a real top-up provider.
+- [x] Show insufficient-balance handling without a real top-up provider.
 - [x] Update Flutter wallet UI to show both balances and ledger activity.
 
 Exit criteria: a seeded development user can enter a tournament exactly once,
@@ -408,8 +408,8 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 
 ## 9. Required end-to-end scenarios
 
-- [ ] Seeded Credit balance -> tournament entry -> correct remaining balance.
-- [ ] Two simultaneous entry attempts -> only one successful debit/registration.
+- [x] Seeded Credit balance -> tournament entry -> correct remaining balance.
+- [x] Two simultaneous entry attempts -> only one successful debit/registration.
 - [ ] Underfilled bracket at or above minimum -> fair byes and successful start.
 - [ ] Below-minimum tournament -> cancellation and exact Credit refunds.
 - [ ] Entry-scaled pool -> final pool based only on confirmed entrants.

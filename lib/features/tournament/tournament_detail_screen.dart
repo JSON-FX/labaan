@@ -103,21 +103,29 @@ class TournamentDetailScreen extends ConsumerWidget {
                 children: [
                   _HeroBanner(tournament: t),
                   const SizedBox(height: 14),
-                  const SectionLabel('Prize · Fee · Format'),
+                  SectionLabel(
+                    t.usesWallet
+                        ? 'Rewards · Entry · Format'
+                        : 'Prize · Fee · Format',
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: _MetricTile(
                           label: 'PRIZE',
-                          value: formatPeso(t.prizePoolPhp, decimals: 0),
+                          value: t.usesWallet
+                              ? 'TBD'
+                              : formatPeso(t.prizePoolPhp, decimals: 0),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _MetricTile(
                           label: 'ENTRY',
-                          value: formatPeso(t.entryFeePhp, decimals: 0),
+                          value: t.usesWallet
+                              ? '${t.entryCreditCost ?? 0} CR'
+                              : formatPeso(t.entryFeePhp, decimals: 0),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -466,7 +474,9 @@ class _RegisterCta extends StatelessWidget {
               label: 'Register ›',
               onPressed: onPressed,
               trailing: Text(
-                formatPeso(tournament.entryFeePhp, decimals: 0),
+                tournament.usesWallet
+                    ? '${tournament.entryCreditCost ?? 0} CR'
+                    : formatPeso(tournament.entryFeePhp, decimals: 0),
                 style: LbType.button.copyWith(color: LbColors.limeInk),
               ),
             ),

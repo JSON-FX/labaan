@@ -104,6 +104,8 @@ development environment, not merely drawn as screens.
 - [x] Seed spendable development balances, expose cursor-paginated Wallet v2
       reads, and replace the Flutter cash-flow wallet with dual balances and
       safe ledger activity
-- [ ] Replace per-registration payment with atomic Credit-funded entry/refund
+- [x] Replace per-registration payment for Wallet v2 tournaments with atomic
+      Credit-funded entry/refund, balance-aware Flutter registration UI, and
+      explicit insufficient-balance handling while preserving legacy PayMongo
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

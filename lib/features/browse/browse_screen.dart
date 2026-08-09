@@ -308,7 +308,9 @@ class _TournamentBrowseRow extends StatelessWidget {
                 ),
               ),
               Text(
-                formatPeso(tournament.entryFeePhp, decimals: 0),
+                tournament.usesWallet
+                    ? '${tournament.entryCreditCost ?? 0} CR'
+                    : formatPeso(tournament.entryFeePhp, decimals: 0),
                 style: LbType.rankNumeral(15, color: LbColors.lime),
               ),
             ],

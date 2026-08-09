@@ -141,6 +141,8 @@ class LbTournament {
     required this.startsAt,
     this.locksAt,
     required this.createdAt,
+    this.economyMode = TournamentEconomy.legacyCash,
+    this.entryCreditCost,
   });
 
   final String id;
@@ -161,10 +163,13 @@ class LbTournament {
   final DateTime startsAt;
   final DateTime? locksAt;
   final DateTime createdAt;
+  final TournamentEconomy economyMode;
+  final int? entryCreditCost;
 
   bool get isLive => status == TournamentStatus.live;
   bool get isOpen =>
       status == TournamentStatus.open || status == TournamentStatus.fillingUp;
+  bool get usesWallet => economyMode == TournamentEconomy.walletV2;
   int get slotsRemaining => maxTeams - registeredTeams;
 
   /// Countdown to lock — null if lock time isn't scheduled or has passed.
@@ -176,6 +181,8 @@ class LbTournament {
 }
 
 enum RegistrationPaymentStatus { pending, paid, refunded, failed }
+
+enum TournamentEconomy { legacyCash, walletV2 }
 
 @immutable
 class LbRegistration {
@@ -189,6 +196,9 @@ class LbRegistration {
     required this.amountPhp,
     required this.commissionCollectedPhp,
     this.paymongoRef,
+    this.economyMode = TournamentEconomy.legacyCash,
+    this.entryCreditAmount,
+    this.cancelledAt,
   });
 
   final String id;
@@ -200,6 +210,36 @@ class LbRegistration {
   final int amountPhp;
   final int commissionCollectedPhp;
   final String? paymongoRef;
+  final TournamentEconomy economyMode;
+  final int? entryCreditAmount;
+  final DateTime? cancelledAt;
+}
+
+@immutable
+class CreditRegistrationResult {
+  const CreditRegistrationResult({
+    required this.registration,
+    required this.entryCreditBalance,
+    required this.entryCreditCost,
+    this.walletTransactionId,
+    required this.existing,
+  });
+
+  final LbRegistration registration;
+  final int entryCreditBalance;
+  final int entryCreditCost;
+  final String? walletTransactionId;
+  final bool existing;
+}
+
+class LbRegistrationFailure implements Exception {
+  const LbRegistrationFailure(this.code, this.message);
+
+  final String code;
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 @immutable

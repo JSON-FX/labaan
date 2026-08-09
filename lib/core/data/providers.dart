@@ -46,10 +46,14 @@ final bracketRepoProvider = Provider<BracketRepo>(
       : MockBracketRepo(),
 );
 
+final mockWalletStateProvider = Provider<MockWalletState>(
+  (ref) => MockWalletState(),
+);
+
 final registrationRepoProvider = Provider<RegistrationRepo>(
   (ref) => ref.watch(backendEnabledProvider)
       ? SupabaseRegistrationRepo(Lb.client)
-      : MockRegistrationRepo(),
+      : MockRegistrationRepo(ref.watch(mockWalletStateProvider)),
 );
 
 final resultsRepoProvider = Provider<ResultsRepo>(
@@ -73,7 +77,7 @@ final settingsRepoProvider = Provider<SettingsRepo>(
 final walletRepoProvider = Provider<WalletRepo>(
   (ref) => ref.watch(backendEnabledProvider)
       ? SupabaseWalletRepo(Lb.client)
-      : MockWalletRepo(),
+      : MockWalletRepo(ref.watch(mockWalletStateProvider)),
 );
 
 final teamsRepoProvider = Provider<TeamsRepo>(

@@ -125,6 +125,11 @@ LbTournament _tournamentFromRow(Map<String, dynamic> row) {
     entryFeePhp: _centavosToPhp(row['entry_fee']),
     commissionRate: (row['commission_rate'] as num).toDouble(),
     prizePoolPhp: _centavosToPhp(row['prize_pool']),
+    economyMode: _enumFromSnake(
+      TournamentEconomy.values,
+      row['economy_mode'] as String? ?? 'legacy_cash',
+    ),
+    entryCreditCost: (row['entry_credit_cost'] as num?)?.toInt(),
     status: _enumFromSnake(TournamentStatus.values, row['status'] as String),
     organizerId: row['organizer_id'] as String,
     moderatorIds: _relatedUserIds(row, 'tournament_moderators'),
@@ -214,6 +219,14 @@ LbRegistration _registrationFromRow(Map<String, dynamic> row) {
     amountPhp: _centavosToPhp(row['amount']),
     commissionCollectedPhp: _centavosToPhp(row['commission_collected']),
     paymongoRef: row['paymongo_ref'] as String?,
+    economyMode: _enumFromSnake(
+      TournamentEconomy.values,
+      row['economy_mode'] as String? ?? 'legacy_cash',
+    ),
+    entryCreditAmount: (row['entry_credit_amount'] as num?)?.toInt(),
+    cancelledAt: row['cancelled_at'] == null
+        ? null
+        : DateTime.parse(row['cancelled_at'] as String),
   );
 }
 
@@ -536,6 +549,89 @@ class SupabaseBracketRepo implements BracketRepo {
 class SupabaseRegistrationRepo implements RegistrationRepo {
   SupabaseRegistrationRepo(this._client);
   final SupabaseClient _client;
+
+  @override
+  Future<CreditRegistrationResult> enterWithCredits({
+    required String tournamentId,
+    required String userId,
+    String? teamId,
+    required String idempotencyKey,
+  }) async {
+    final data = await _invokeCreditCommand(
+      'registration-enter-with-credits',
+      idempotencyKey: idempotencyKey,
+      body: {
+        'tournamentId': tournamentId,
+        'teamId': teamId,
+        'idempotencyKey': idempotencyKey,
+      },
+    );
+    return _creditRegistrationResult(data);
+  }
+
+  @override
+  Future<CreditRegistrationResult> cancelCreditRegistration({
+    required String registrationId,
+    required String userId,
+    required String idempotencyKey,
+  }) async {
+    final data = await _invokeCreditCommand(
+      'registration-cancel',
+      idempotencyKey: idempotencyKey,
+      body: {
+        'registrationId': registrationId,
+        'idempotencyKey': idempotencyKey,
+      },
+    );
+    return _creditRegistrationResult(data);
+  }
+
+  Future<Map<String, dynamic>> _invokeCreditCommand(
+    String functionName, {
+    required String idempotencyKey,
+    required Map<String, dynamic> body,
+  }) async {
+    try {
+      final response = await _client.functions.invoke(
+        functionName,
+        headers: {'Idempotency-Key': idempotencyKey},
+        body: body,
+      );
+      if (response.status < 200 || response.status >= 300) {
+        throw _registrationFailure(response.data);
+      }
+      return _functionData(response);
+    } on FunctionException catch (error) {
+      throw _registrationFailure(error.details);
+    }
+  }
+
+  LbRegistrationFailure _registrationFailure(Object? details) {
+    if (details case final Map envelope) {
+      final rawError = envelope['error'];
+      if (rawError case final Map error) {
+        return LbRegistrationFailure(
+          error['code'] as String? ?? 'registration_failed',
+          error['message'] as String? ?? 'Could not update registration.',
+        );
+      }
+    }
+    return const LbRegistrationFailure(
+      'registration_failed',
+      'Could not update registration. Please try again.',
+    );
+  }
+
+  CreditRegistrationResult _creditRegistrationResult(
+    Map<String, dynamic> data,
+  ) => CreditRegistrationResult(
+    registration: _registrationFromRow(_map(data['registration'])),
+    entryCreditBalance: (data['entryCreditBalance'] as num).toInt(),
+    entryCreditCost:
+        ((data['entryCreditCost'] ?? data['refundedCredits']) as num).toInt(),
+    walletTransactionId: data['walletTransactionId'] as String?,
+    existing: data['existing'] as bool? ?? false,
+  );
 
   @override
   Future<RegistrationCheckout> register({

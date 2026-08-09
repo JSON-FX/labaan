@@ -33,6 +33,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   bool _teamMode = false;
   int _payMethod = 0; // 0 GCash, 1 Maya, 2 Card
   bool _submitting = false;
+  late final String _entryIdempotencyKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _entryIdempotencyKey =
+        'credit-entry:${widget.tournamentId}:${DateTime.now().microsecondsSinceEpoch}';
+  }
 
   PayMethod get _selectedMethod =>
       const [PayMethod.gcash, PayMethod.maya, PayMethod.card][_payMethod];
@@ -103,6 +111,68 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     }
   }
 
+  Future<void> _enterWithCredits(
+    LbTournament tournament,
+    LbTeam? selectedTeam,
+  ) async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please sign in again.')));
+      return;
+    }
+    if (_teamMode && selectedTeam == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Join or create a team first.')),
+      );
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final result = await ref
+          .read(registrationRepoProvider)
+          .enterWithCredits(
+            tournamentId: tournament.id,
+            userId: user.id,
+            teamId: _teamMode ? selectedTeam?.id : null,
+            idempotencyKey: _entryIdempotencyKey,
+          );
+      ref.invalidate(walletProvider);
+      ref.invalidate(tournamentByIdProvider(tournament.id));
+      if (!mounted) return;
+      context.go(
+        Uri(
+          path: '/register/result/success',
+          queryParameters: {
+            'tournamentId': tournament.id,
+            'tournament': tournament.title,
+            'amount': '${_formatUnits(result.entryCreditCost)} CR',
+            if (result.walletTransactionId != null)
+              'reference': result.walletTransactionId,
+            'registrationId': result.registration.id,
+            'wallet': 'true',
+          },
+        ).toString(),
+      );
+    } on LbRegistrationFailure catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not reserve your slot. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(tournamentByIdProvider(widget.tournamentId));
@@ -111,6 +181,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         ? const <LbTeam>[]
         : ref.watch(teamsForUserProvider(user.id)).value ?? const <LbTeam>[];
     final selectedTeam = teams.isEmpty ? null : teams.first;
+    final wallet = ref.watch(walletProvider).value;
+    final creditBalance = wallet
+        ?.balanceFor(LbWalletCurrency.entryCredit)
+        .balance;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -196,46 +270,56 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const SectionLabel(
-                    'Fee breakdown',
-                    trailing: _TransparentTag(),
-                  ),
-                  const SizedBox(height: 8),
-                  _FeeBreakdown(tier: t.tier),
-                  const SizedBox(height: 14),
-                  const SectionLabel('Payment method'),
-                  const SizedBox(height: 8),
-                  _PaymentTile(
-                    selected: _payMethod == 0,
-                    onTap: () => setState(() => _payMethod = 0),
-                    code: 'G',
-                    title: 'GCash',
-                    hint: '· ••7 · most used',
-                    gradient: const [LbColors.gcashStart, LbColors.gcashEnd],
-                    highlightHint: true,
-                  ),
-                  const SizedBox(height: 6),
-                  _PaymentTile(
-                    selected: _payMethod == 1,
-                    onTap: () => setState(() => _payMethod = 1),
-                    code: 'M',
-                    title: 'Maya',
-                    hint: '· PayMaya PH',
-                    gradient: const [LbColors.mayaStart, LbColors.mayaEnd],
-                  ),
-                  const SizedBox(height: 6),
-                  _PaymentTile(
-                    selected: _payMethod == 2,
-                    onTap: () => setState(() => _payMethod = 2),
-                    code: '▭',
-                    title: 'Credit / Debit card',
-                    hint: '· Visa · MC',
-                    gradient: const [Color(0xFF2A2F3A), Color(0xFF14171E)],
-                  ),
-                  const SizedBox(height: 10),
-                  if (!ref.watch(backendEnabledProvider)) ...[
-                    const _MockPaymentNote(),
+                  if (t.usesWallet) ...[
+                    const SectionLabel('Pay with Credits'),
                     const SizedBox(height: 8),
+                    _CreditBalanceCard(
+                      balance: creditBalance,
+                      cost: t.entryCreditCost ?? 0,
+                    ),
+                    const SizedBox(height: 10),
+                  ] else ...[
+                    const SectionLabel(
+                      'Fee breakdown',
+                      trailing: _TransparentTag(),
+                    ),
+                    const SizedBox(height: 8),
+                    _FeeBreakdown(tier: t.tier),
+                    const SizedBox(height: 14),
+                    const SectionLabel('Payment method'),
+                    const SizedBox(height: 8),
+                    _PaymentTile(
+                      selected: _payMethod == 0,
+                      onTap: () => setState(() => _payMethod = 0),
+                      code: 'G',
+                      title: 'GCash',
+                      hint: '· ••7 · most used',
+                      gradient: const [LbColors.gcashStart, LbColors.gcashEnd],
+                      highlightHint: true,
+                    ),
+                    const SizedBox(height: 6),
+                    _PaymentTile(
+                      selected: _payMethod == 1,
+                      onTap: () => setState(() => _payMethod = 1),
+                      code: 'M',
+                      title: 'Maya',
+                      hint: '· PayMaya PH',
+                      gradient: const [LbColors.mayaStart, LbColors.mayaEnd],
+                    ),
+                    const SizedBox(height: 6),
+                    _PaymentTile(
+                      selected: _payMethod == 2,
+                      onTap: () => setState(() => _payMethod = 2),
+                      code: '▭',
+                      title: 'Credit / Debit card',
+                      hint: '· Visa · MC',
+                      gradient: const [Color(0xFF2A2F3A), Color(0xFF14171E)],
+                    ),
+                    const SizedBox(height: 10),
+                    if (!ref.watch(backendEnabledProvider)) ...[
+                      const _MockPaymentNote(),
+                      const SizedBox(height: 8),
+                    ],
                   ],
                   const _CaptchaNote(),
                 ],
@@ -245,11 +329,25 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: _PayCta(
-                tier: t.tier,
-                busy: _submitting,
-                onPressed: _submitting ? null : () => _pay(t, selectedTeam),
-              ),
+              child: t.usesWallet
+                  ? _CreditCta(
+                      cost: t.entryCreditCost ?? 0,
+                      balance: creditBalance,
+                      busy: _submitting,
+                      onPressed:
+                          _submitting ||
+                              creditBalance == null ||
+                              creditBalance < (t.entryCreditCost ?? 0)
+                          ? null
+                          : () => _enterWithCredits(t, selectedTeam),
+                    )
+                  : _PayCta(
+                      tier: t.tier,
+                      busy: _submitting,
+                      onPressed: _submitting
+                          ? null
+                          : () => _pay(t, selectedTeam),
+                    ),
             ),
           ],
         ),
@@ -401,6 +499,103 @@ class _EntryModeCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CreditBalanceCard extends StatelessWidget {
+  const _CreditBalanceCard({required this.balance, required this.cost});
+
+  final int? balance;
+  final int cost;
+
+  @override
+  Widget build(BuildContext context) {
+    final available = balance;
+    final enough = available != null && available >= cost;
+    return LbCard(
+      highlighted: enough,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        children: [
+          _CreditRow(
+            label: 'Available balance',
+            value: available == null
+                ? 'Loading…'
+                : '${_formatUnits(available)} CR',
+          ),
+          const SizedBox(height: 7),
+          _CreditRow(
+            label: 'Tournament entry',
+            value: '-${_formatUnits(cost)} CR',
+          ),
+          const Divider(height: 18, color: LbColors.borderMuted),
+          _CreditRow(
+            label: 'Balance after entry',
+            value: available == null
+                ? '—'
+                : '${_formatUnits((available - cost).clamp(0, available))} CR',
+            emphasized: true,
+          ),
+          if (available != null && !enough) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: LbColors.danger.withValues(alpha: 0.08),
+                border: Border.all(
+                  color: LbColors.danger.withValues(alpha: 0.35),
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'INSUFFICIENT CREDITS · ${_formatUnits(cost - available)} CR more needed',
+                style: LbType.metaSm.copyWith(
+                  color: LbColors.danger,
+                  fontSize: 9,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CreditRow extends StatelessWidget {
+  const _CreditRow({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          label,
+          style: emphasized ? LbType.cardTitleSm : LbType.body,
+        ),
+      ),
+      const SizedBox(width: 10),
+      Flexible(
+        child: Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.end,
+          style: emphasized
+              ? LbType.moneyBig.copyWith(color: LbColors.lime)
+              : LbType.money,
+        ),
+      ),
+    ],
+  );
 }
 
 class _TransparentTag extends StatelessWidget {
@@ -662,6 +857,79 @@ class _PayCta extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CreditCta extends StatelessWidget {
+  const _CreditCta({
+    required this.cost,
+    required this.balance,
+    required this.busy,
+    required this.onPressed,
+  });
+
+  final int cost;
+  final int? balance;
+  final bool busy;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final enough = balance != null && balance! >= cost;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [
+            LbColors.bg,
+            LbColors.bg.withValues(alpha: 0.9),
+            LbColors.bg.withValues(alpha: 0),
+          ],
+          stops: const [0.55, 0.9, 1.0],
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: SlantButton(
+              label: busy
+                  ? 'Reserving…'
+                  : enough
+                  ? 'Use Credits & enter'
+                  : 'Insufficient Credits',
+              onPressed: onPressed,
+              trailing: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: LbColors.limeInk,
+                      ),
+                    )
+                  : Text(
+                      '${_formatUnits(cost)} CR',
+                      style: LbType.button.copyWith(color: LbColors.limeInk),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _formatUnits(int value) {
+  final digits = value.abs().toString();
+  final output = StringBuffer();
+  for (var index = 0; index < digits.length; index++) {
+    if (index > 0 && (digits.length - index) % 3 == 0) output.write(',');
+    output.write(digits[index]);
+  }
+  return '${value < 0 ? '-' : ''}$output';
 }
 
 class _Skeleton extends StatelessWidget {

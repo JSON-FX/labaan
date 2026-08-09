@@ -90,6 +90,7 @@ class LabaanApp extends StatelessWidget {
               amount: state.uri.queryParameters['amount'] ?? '—',
               reference: state.uri.queryParameters['reference'],
               registrationId: state.uri.queryParameters['registrationId'],
+              usesCredits: state.uri.queryParameters['wallet'] == 'true',
             );
           },
         ),

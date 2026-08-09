@@ -25,6 +25,7 @@ class PaymentResultScreen extends ConsumerStatefulWidget {
     this.reference,
     this.tournamentId,
     this.registrationId,
+    this.usesCredits = false,
     super.key,
   });
 
@@ -34,6 +35,7 @@ class PaymentResultScreen extends ConsumerStatefulWidget {
   final String? reference;
   final String? tournamentId;
   final String? registrationId;
+  final bool usesCredits;
 
   @override
   ConsumerState<PaymentResultScreen> createState() =>
@@ -125,13 +127,16 @@ class _PaymentResultScreenState extends ConsumerState<PaymentResultScreen> {
                     widget.registrationId ??
                     'pi_stub_${status.name}',
                 status: status,
+                usesCredits: widget.usesCredits,
               ),
               const Spacer(),
               _ActionsRow(status: status, tournamentId: widget.tournamentId),
               const SizedBox(height: 8),
               if (status != PaymentResult.failed)
                 Text(
-                  'PayMongo · BSP-registered · GAB compliant',
+                  widget.usesCredits
+                      ? 'CREDITS · CONFIRMED FROM YOUR WALLET'
+                      : 'PayMongo · BSP-registered · GAB compliant',
                   style: LbType.metaSm.copyWith(
                     color: LbColors.textDim,
                     fontSize: 9,
@@ -213,17 +218,22 @@ class _ReceiptCard extends StatelessWidget {
     required this.amount,
     required this.reference,
     required this.status,
+    required this.usesCredits,
   });
 
   final String tournamentTitle;
   final String amount;
   final String reference;
   final PaymentResult status;
+  final bool usesCredits;
 
   @override
   Widget build(BuildContext context) {
     final (statusLabel, statusColor) = switch (status) {
-      PaymentResult.success => ('PAID · SLOT RESERVED', LbColors.lime),
+      PaymentResult.success => (
+        usesCredits ? 'CREDITS PAID · SLOT RESERVED' : 'PAID · SLOT RESERVED',
+        LbColors.lime,
+      ),
       PaymentResult.pending => ('AWAITING SETTLEMENT', LbColors.gold),
       PaymentResult.failed => ('NOT CHARGED', LbColors.danger),
     };

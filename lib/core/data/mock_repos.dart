@@ -14,6 +14,39 @@ const _kWriteLatency = Duration(milliseconds: 520);
 Future<T> _delay<T>(T value, [Duration d = _kReadLatency]) =>
     Future.delayed(d, () => value);
 
+class MockWalletState {
+  MockWalletState()
+    : transactions = [
+        LbWalletTransaction(
+          entryId: 'wallet_entry_reward_seed',
+          id: 'wallet_reward_seed',
+          kind: LbWalletTransactionKind.adminAdjustment,
+          currency: LbWalletCurrency.rewardPoint,
+          amount: 250,
+          occurredAt: LbFixtures.now.subtract(const Duration(minutes: 1)),
+          referenceType: 'profile',
+          referenceId: LbFixtures.me.id,
+        ),
+        LbWalletTransaction(
+          entryId: 'wallet_entry_credit_seed',
+          id: 'wallet_credit_seed',
+          kind: LbWalletTransactionKind.adminAdjustment,
+          currency: LbWalletCurrency.entryCredit,
+          amount: 1000,
+          occurredAt: LbFixtures.now.subtract(const Duration(minutes: 2)),
+          referenceType: 'profile',
+          referenceId: LbFixtures.me.id,
+        ),
+      ];
+
+  int entryCreditBalance = 1000;
+  int rewardPointBalance = 250;
+  final List<LbWalletTransaction> transactions;
+  final Map<String, LbRegistration> registrations = {};
+  final Map<String, String> entryKeys = {};
+  final Map<String, String> cancellationKeys = {};
+}
+
 class MockAuthRepo implements AuthRepo {
   MockAuthRepo({LbUser? initialUser, bool signedIn = true})
     : _current = signedIn ? (initialUser ?? LbFixtures.me) : null,
@@ -279,6 +312,154 @@ class MockBracketRepo implements BracketRepo {
 }
 
 class MockRegistrationRepo implements RegistrationRepo {
+  MockRegistrationRepo([MockWalletState? walletState])
+    : _walletState = walletState ?? MockWalletState();
+
+  final MockWalletState _walletState;
+
+  @override
+  Future<CreditRegistrationResult> enterWithCredits({
+    required String tournamentId,
+    required String userId,
+    String? teamId,
+    required String idempotencyKey,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    final tournament = LbFixtures.allTournaments.firstWhere(
+      (item) => item.id == tournamentId,
+    );
+    final cost = tournament.entryCreditCost;
+    if (!tournament.usesWallet || cost == null) {
+      throw const LbRegistrationFailure(
+        'wallet_registration_unavailable',
+        'This tournament still uses legacy registration.',
+      );
+    }
+    final registrationId = 'credit_reg_${tournament.id}_$userId';
+    final current = _walletState.registrations[registrationId];
+    if (current?.paymentStatus == RegistrationPaymentStatus.paid) {
+      if (_walletState.entryKeys[registrationId] != idempotencyKey) {
+        throw const LbRegistrationFailure(
+          'already_registered',
+          'You are already registered for this tournament.',
+        );
+      }
+      return CreditRegistrationResult(
+        registration: current!,
+        entryCreditBalance: _walletState.entryCreditBalance,
+        entryCreditCost: cost,
+        walletTransactionId: 'credit_entry_$registrationId',
+        existing: true,
+      );
+    }
+    if (_walletState.entryCreditBalance < cost) {
+      throw const LbRegistrationFailure(
+        'insufficient_wallet_balance',
+        'You do not have enough Credits to enter this tournament.',
+      );
+    }
+
+    _walletState.entryCreditBalance -= cost;
+    final registration = LbRegistration(
+      id: registrationId,
+      tournamentId: tournamentId,
+      userId: userId,
+      teamId: teamId,
+      paymentStatus: RegistrationPaymentStatus.paid,
+      paidAt: LbFixtures.now,
+      amountPhp: 0,
+      commissionCollectedPhp: 0,
+      economyMode: TournamentEconomy.walletV2,
+      entryCreditAmount: cost,
+    );
+    _walletState.registrations[registrationId] = registration;
+    _walletState.entryKeys[registrationId] = idempotencyKey;
+    final transactionId = 'credit_entry_$registrationId';
+    _walletState.transactions.insert(
+      0,
+      LbWalletTransaction(
+        entryId: 'entry_$transactionId',
+        id: transactionId,
+        kind: LbWalletTransactionKind.entryFee,
+        currency: LbWalletCurrency.entryCredit,
+        amount: -cost,
+        occurredAt: LbFixtures.now,
+        referenceType: 'registration',
+        referenceId: registrationId,
+      ),
+    );
+    return CreditRegistrationResult(
+      registration: registration,
+      entryCreditBalance: _walletState.entryCreditBalance,
+      entryCreditCost: cost,
+      walletTransactionId: transactionId,
+      existing: false,
+    );
+  }
+
+  @override
+  Future<CreditRegistrationResult> cancelCreditRegistration({
+    required String registrationId,
+    required String userId,
+    required String idempotencyKey,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    final current = _walletState.registrations[registrationId];
+    if (current == null || current.userId != userId) {
+      throw const LbRegistrationFailure(
+        'registration_not_found',
+        'Registration not found.',
+      );
+    }
+    final credits = current.entryCreditAmount ?? 0;
+    if (current.paymentStatus == RegistrationPaymentStatus.refunded) {
+      return CreditRegistrationResult(
+        registration: current,
+        entryCreditBalance: _walletState.entryCreditBalance,
+        entryCreditCost: credits,
+        walletTransactionId: 'credit_refund_$registrationId',
+        existing: true,
+      );
+    }
+    _walletState.entryCreditBalance += credits;
+    final registration = LbRegistration(
+      id: current.id,
+      tournamentId: current.tournamentId,
+      userId: current.userId,
+      teamId: current.teamId,
+      paymentStatus: RegistrationPaymentStatus.refunded,
+      paidAt: current.paidAt,
+      amountPhp: 0,
+      commissionCollectedPhp: 0,
+      economyMode: TournamentEconomy.walletV2,
+      entryCreditAmount: credits,
+      cancelledAt: LbFixtures.now,
+    );
+    _walletState.registrations[registrationId] = registration;
+    _walletState.cancellationKeys[registrationId] = idempotencyKey;
+    final transactionId = 'credit_refund_$registrationId';
+    _walletState.transactions.insert(
+      0,
+      LbWalletTransaction(
+        entryId: 'entry_$transactionId',
+        id: transactionId,
+        kind: LbWalletTransactionKind.entryRefund,
+        currency: LbWalletCurrency.entryCredit,
+        amount: credits,
+        occurredAt: LbFixtures.now,
+        referenceType: 'registration',
+        referenceId: registrationId,
+      ),
+    );
+    return CreditRegistrationResult(
+      registration: registration,
+      entryCreditBalance: _walletState.entryCreditBalance,
+      entryCreditCost: credits,
+      walletTransactionId: transactionId,
+      existing: false,
+    );
+  }
+
   @override
   Future<RegistrationCheckout> register({
     required String tournamentId,
@@ -545,47 +726,31 @@ class MockSettingsRepo implements SettingsRepo {
 }
 
 class MockWalletRepo implements WalletRepo {
+  MockWalletRepo([MockWalletState? state])
+    : _state = state ?? MockWalletState();
+
+  final MockWalletState _state;
+
   @override
   Future<LbWallet> currentWallet({int limit = 50, LbWalletCursor? before}) =>
       _delay(
         LbWallet(
           version: 2,
-          balances: const [
+          balances: [
             LbWalletBalance(
               currency: LbWalletCurrency.entryCredit,
               displayName: 'Credits',
               symbol: 'CR',
-              balance: 1000,
+              balance: _state.entryCreditBalance,
             ),
             LbWalletBalance(
               currency: LbWalletCurrency.rewardPoint,
               displayName: 'Victory Points',
               symbol: 'VP',
-              balance: 250,
+              balance: _state.rewardPointBalance,
             ),
           ],
-          transactions: [
-            LbWalletTransaction(
-              entryId: 'wallet_entry_reward_seed',
-              id: 'wallet_reward_seed',
-              kind: LbWalletTransactionKind.adminAdjustment,
-              currency: LbWalletCurrency.rewardPoint,
-              amount: 250,
-              occurredAt: LbFixtures.now.subtract(const Duration(minutes: 1)),
-              referenceType: 'profile',
-              referenceId: LbFixtures.me.id,
-            ),
-            LbWalletTransaction(
-              entryId: 'wallet_entry_credit_seed',
-              id: 'wallet_credit_seed',
-              kind: LbWalletTransactionKind.adminAdjustment,
-              currency: LbWalletCurrency.entryCredit,
-              amount: 1000,
-              occurredAt: LbFixtures.now.subtract(const Duration(minutes: 2)),
-              referenceType: 'profile',
-              referenceId: LbFixtures.me.id,
-            ),
-          ].take(limit).toList(),
+          transactions: _state.transactions.take(limit).toList(),
           nextCursor: null,
         ),
       );

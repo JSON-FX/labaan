@@ -139,6 +139,20 @@ class LbBracket {
 
 /// Registration + payment.
 abstract class RegistrationRepo {
+  Future<CreditRegistrationResult> enterWithCredits({
+    required String tournamentId,
+    required String userId,
+    String? teamId,
+    required String idempotencyKey,
+  });
+
+  Future<CreditRegistrationResult> cancelCreditRegistration({
+    required String registrationId,
+    required String userId,
+    required String idempotencyKey,
+  });
+
+  /// Legacy PayMongo path retained only for legacy-cash tournaments.
   Future<RegistrationCheckout> register({
     required String tournamentId,
     required String userId,
