@@ -339,7 +339,9 @@ roster and verified result.
       server-owned economics, direct-platform validation, allow-listed return
       and hosted URLs, durable session reuse, daily limits, and a reconciliation
       cutoff before provider idempotency expires.
-- [ ] Route webhook events by purpose and top-up order reference.
+- [x] Route signed legacy and Hosted Checkout v2 webhook events through one
+      global purpose-aware receipt, requiring top-up purpose/order/session and
+      provider environment agreement without granting Credits in the router.
 - [ ] Credit only after a verified, deduplicated paid event.
 - [ ] Handle pending, failure, expiry, refund, reversal, and duplicate capture.
 - [ ] Reuse the Flutter in-app checkout and native-wallet fallback on direct

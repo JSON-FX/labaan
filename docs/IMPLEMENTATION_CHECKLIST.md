@@ -133,5 +133,8 @@ development environment, not merely drawn as screens.
 - [x] Create PayMongo v2 Credit top-up checkouts from server-priced packs with
       exact order/session retry reuse, provider idempotency, URL allow-listing,
       daily purchase limits, and uncertainty reconciliation safeguards
+- [x] Route signed PayMongo legacy and Hosted Checkout v2 events by explicit
+      financial purpose through a global replay receipt; valid top-up events
+      are queued for settlement without changing the wallet
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending
