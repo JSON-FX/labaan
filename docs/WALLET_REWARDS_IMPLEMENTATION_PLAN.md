@@ -150,7 +150,9 @@ Streamer -> Host web portal -> PayMongo -> Labaan
 ### Prize distribution
 
 - [ ] Choose default placement percentages or fixed placement amounts.
-- [ ] Ensure integer rounding produces exactly the locked total.
+- [x] Ensure integer rounding produces exactly the locked total; assign the
+      division remainder to first place and roll an unavailable third-place
+      bucket into first place.
 - [ ] Define team distribution. Recommended: snapshot the eligible roster when
       the tournament locks and distribute deterministically among that roster.
 - [ ] Define how disqualified, removed, substituted, or banned players affect
@@ -312,7 +314,8 @@ wallet shows the authoritative results.
 - [x] Add immutable reward-rule snapshots to tournaments.
 - [x] Support underfilled brackets with minimum counts and byes.
 - [x] Calculate and lock the final reward pool at registration close.
-- [ ] Implement idempotent placement/team reward allocation.
+- [x] Implement idempotent placement/team reward allocation from verified
+      bracket topology and immutable team/roster snapshots.
 - [ ] Issue Victory Points only after verified tournament completion.
 - [ ] Replace cash-payout notifications and profile aggregates.
 - [ ] Add reward history to Wallet v2.
