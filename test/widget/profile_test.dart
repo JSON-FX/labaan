@@ -24,6 +24,8 @@ void main() {
     expect(find.text('Team MNL'), findsOneWidget);
     expect(find.text('MNL'), findsOneWidget);
     expect(find.text('t_mnl'), findsNothing);
+    expect(find.text('268 VP'), findsOneWidget);
+    expect(find.text('₱18,400'), findsNothing);
   });
 
   testWidgets('renders the authenticated player profile, not the fixture', (
@@ -52,6 +54,7 @@ void main() {
       totalWins: 0,
       totalLosses: 0,
       totalPayoutPhp: 0,
+      totalRewardPoints: 0,
       teamIds: const [],
       recentTournaments: const [],
     );

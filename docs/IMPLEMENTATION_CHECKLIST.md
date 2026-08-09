@@ -120,5 +120,9 @@ development environment, not merely drawn as screens.
 - [x] Split verified team allocations equally across locked rosters, reject
       cross-team eligibility overlap, post exact balanced Victory Point grants
       once per player, and expose those rewards in Wallet activity
+- [x] Bypass cash disbursement for Wallet tournaments, send one idempotent
+      Wallet-linked Victory Point notification per positive grant, and show
+      separate Victory Point earnings/reward history on player profiles while
+      preserving legacy peso payout records
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

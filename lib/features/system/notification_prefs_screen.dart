@@ -89,7 +89,7 @@ class _NotificationPrefsScreenState
                 'Moderator cleared your submitted score.',
               ),
               const SizedBox(height: 20),
-              SectionLabel('Social & money'),
+              SectionLabel('Social & rewards'),
               const SizedBox(height: 8),
               _prefTile(
                 NotifKind.teamInvite,
@@ -98,9 +98,15 @@ class _NotificationPrefsScreenState
               ),
               const SizedBox(height: 6),
               _prefTile(
+                NotifKind.rewardEarned,
+                'Victory Points earned',
+                'A verified tournament reward was credited to your Wallet.',
+              ),
+              const SizedBox(height: 6),
+              _prefTile(
                 NotifKind.payoutReceived,
-                'Payout received',
-                'PayMongo disbursed a prize to your GCash / Maya / bank.',
+                'Legacy payout updates',
+                'Status updates for tournaments that used the former cash-prize system.',
               ),
               const SizedBox(height: 24),
               Text(

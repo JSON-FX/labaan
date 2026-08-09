@@ -215,6 +215,14 @@ LbMatch _matchFromRow(Map<String, dynamic> row, {BracketSide? side}) {
 
 NotifKind _notificationKind(Object? value) {
   final raw = value?.toString() ?? '';
+  if (const {
+    'payout_received',
+    'payout_setup_required',
+    'prize_paid',
+    'prize_processing',
+  }.contains(raw)) {
+    return NotifKind.payoutReceived;
+  }
   return NotifKind.values.firstWhere(
     (kind) => kind.snake == raw || kind.name == raw,
     orElse: () => NotifKind.startingSoon,
@@ -395,8 +403,17 @@ class SupabaseMyTournamentsRepo implements MyTournamentsRepo {
           .eq('user_id', userId)
           .eq('payment_status', 'paid'),
       _client.from('team_members').select('team_id').eq('user_id', userId),
+      _client
+          .from('tournament_reward_grants')
+          .select('amount, placement, tournaments!inner($_tournamentSelect)')
+          .eq('user_id', userId),
     ]);
     final rows = responses[0] as List<dynamic>;
+    final rewardRows = responses[2] as List<dynamic>;
+    final rewardByTournament = <String, Map<String, dynamic>>{
+      for (final row in rewardRows)
+        _map(row['tournaments'])['id'] as String: _map(row),
+    };
     final teamIds = {
       for (final row in responses[1] as List<dynamic>) row['team_id'] as String,
     };
@@ -420,6 +437,7 @@ class SupabaseMyTournamentsRepo implements MyTournamentsRepo {
     final live = <LbLiveEntry>[];
     final upcoming = <LbUpcomingEntry>[];
     final completed = <LbCompletedTournament>[];
+    final completedIds = <String>{};
     for (final row in rows) {
       final tournament = _tournamentFromRow(_map(row['tournaments']));
       switch (tournament.status) {
@@ -479,18 +497,39 @@ class SupabaseMyTournamentsRepo implements MyTournamentsRepo {
             ),
           );
         case TournamentStatus.completed:
+          final reward = rewardByTournament[tournament.id];
           completed.add(
             LbCompletedTournament(
               tournament: tournament,
-              finalPlace: 0,
+              finalPlace: (reward?['placement'] as num?)?.toInt() ?? 0,
               payoutPhp: 0,
+              rewardPoints: (reward?['amount'] as num?)?.toInt() ?? 0,
             ),
           );
+          completedIds.add(tournament.id);
         case TournamentStatus.draft:
         case TournamentStatus.cancelled:
           break;
       }
     }
+    for (final row in rewardRows) {
+      final tournament = _tournamentFromRow(_map(row['tournaments']));
+      if (tournament.status != TournamentStatus.completed ||
+          !completedIds.add(tournament.id)) {
+        continue;
+      }
+      completed.add(
+        LbCompletedTournament(
+          tournament: tournament,
+          finalPlace: (row['placement'] as num?)?.toInt() ?? 0,
+          payoutPhp: 0,
+          rewardPoints: (row['amount'] as num?)?.toInt() ?? 0,
+        ),
+      );
+    }
+    completed.sort(
+      (a, b) => b.tournament.startsAt.compareTo(a.tournament.startsAt),
+    );
     return LbMyTournaments(
       live: live,
       upcoming: upcoming,
@@ -884,6 +923,8 @@ class SupabaseProfileRepo implements ProfileRepo {
       totalWins: (aggregates['totalWins'] as num?)?.toInt() ?? rank.totalWins,
       totalLosses: (aggregates['totalLosses'] as num?)?.toInt() ?? losses,
       totalPayoutPhp: _centavosToPhp(aggregates['totalPayoutCentavos']),
+      totalRewardPoints:
+          (aggregates['totalRewardPoints'] as num?)?.toInt() ?? 0,
       teamIds: [for (final row in memberships) row['team_id'] as String],
       recentTournaments: [
         for (final value
@@ -893,6 +934,7 @@ class SupabaseProfileRepo implements ProfileRepo {
               tournament: _tournamentFromRow(_map(value['tournament'])),
               finalPlace: (value['finalPlace'] as num?)?.toInt() ?? 2,
               payoutPhp: _centavosToPhp(value['payoutCentavos']),
+              rewardPoints: (value['rewardPoints'] as num?)?.toInt() ?? 0,
             ),
       ],
     );

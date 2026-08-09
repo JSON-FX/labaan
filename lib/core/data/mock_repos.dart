@@ -604,6 +604,7 @@ class MockProfileRepo implements ProfileRepo {
       totalWins: rank.totalWins,
       totalLosses: 182 - rank.totalWins,
       totalPayoutPhp: 18400,
+      totalRewardPoints: userId == LbFixtures.me.id ? 268 : 0,
       teamIds: userId == LbFixtures.me.id ? [LbFixtures.teamMnl.id] : const [],
       recentTournaments: [
         LbCompletedTournament(
@@ -652,6 +653,7 @@ class MockProfileRepo implements ProfileRepo {
       totalWins: existing.totalWins,
       totalLosses: existing.totalLosses,
       totalPayoutPhp: existing.totalPayoutPhp,
+      totalRewardPoints: existing.totalRewardPoints,
       teamIds: existing.teamIds,
       recentTournaments: existing.recentTournaments,
     );

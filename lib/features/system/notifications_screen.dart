@@ -459,6 +459,21 @@ class _KindIcon extends StatelessWidget {
             size: 16,
           ),
         );
+      case NotifKind.rewardEarned:
+        return Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: LbColors.lime.withValues(alpha: 0.12),
+            border: Border.all(color: LbColors.lime),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: const Icon(
+            Icons.workspace_premium_rounded,
+            color: LbColors.lime,
+            size: 17,
+          ),
+        );
       case NotifKind.teamInvite:
         return const TeamAvatar(code: 'CBU', size: 30);
     }

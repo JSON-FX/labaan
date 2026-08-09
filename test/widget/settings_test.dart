@@ -49,6 +49,7 @@ void main() {
     await pumpAndSettleForData(tester);
 
     expect(find.text('Match ready'), findsOneWidget);
+    expect(find.text('Victory Points earned'), findsOneWidget);
     expect(find.text('PUSH'), findsWidgets);
     expect(find.text('EMAIL'), findsWidgets);
   });

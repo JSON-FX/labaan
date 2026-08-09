@@ -316,6 +316,16 @@ class LbFixtures {
       createdAt: now.subtract(const Duration(minutes: 18)),
     ),
     LbNotification(
+      id: 'n_reward_earned',
+      userId: me.id,
+      kind: NotifKind.rewardEarned,
+      title: 'Victory Points earned',
+      body: 'You earned 18 Victory Points from QC Grind Series #07.',
+      createdAt: now.subtract(const Duration(minutes: 24)),
+      deepLink: '/wallet',
+      payload: const {'amount': 18, 'placement': 1},
+    ),
+    LbNotification(
       id: 'n_team_invite',
       userId: me.id,
       kind: NotifKind.teamInvite,

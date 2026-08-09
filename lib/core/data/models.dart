@@ -436,6 +436,7 @@ enum NotifKind {
   teamInvite,
   resultVerified,
   disputeOpened,
+  rewardEarned,
   payoutReceived,
 }
 
@@ -450,6 +451,7 @@ class LbNotificationPreferences {
         kind: const {
           NotifKind.rankUp,
           NotifKind.disputeOpened,
+          NotifKind.rewardEarned,
           NotifKind.payoutReceived,
         }.contains(kind),
     },
@@ -729,6 +731,7 @@ class LbPlayerProfile {
     required this.totalWins,
     required this.totalLosses,
     required this.totalPayoutPhp,
+    required this.totalRewardPoints,
     required this.teamIds,
     required this.recentTournaments,
   });
@@ -740,7 +743,13 @@ class LbPlayerProfile {
   final int totalMatches;
   final int totalWins;
   final int totalLosses;
+
+  /// Historical completed cash payouts. Wallet-economy rewards are never
+  /// folded into this legacy amount.
   final int totalPayoutPhp;
+
+  /// Lifetime Victory Points awarded from verified wallet tournaments.
+  final int totalRewardPoints;
   final List<String> teamIds;
   final List<LbCompletedTournament> recentTournaments;
 
@@ -753,11 +762,13 @@ class LbCompletedTournament {
     required this.tournament,
     required this.finalPlace,
     required this.payoutPhp,
+    this.rewardPoints = 0,
   });
 
   final LbTournament tournament;
   final int finalPlace;
   final int payoutPhp;
+  final int rewardPoints;
 
   bool get wasWin => finalPlace == 1;
 }

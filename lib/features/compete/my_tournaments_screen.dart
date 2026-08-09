@@ -560,14 +560,16 @@ class _CompletedRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'PAYOUT',
+                entry.tournament.usesWallet ? 'REWARD' : 'PAYOUT',
                 style: LbType.metaSm.copyWith(
                   color: LbColors.textDim,
                   fontSize: 9,
                 ),
               ),
               Text(
-                formatPeso(entry.payoutPhp, decimals: 0),
+                entry.tournament.usesWallet
+                    ? '${entry.rewardPoints} VP'
+                    : formatPeso(entry.payoutPhp, decimals: 0),
                 style: LbType.rankNumeral(15, color: LbColors.lime),
               ),
             ],

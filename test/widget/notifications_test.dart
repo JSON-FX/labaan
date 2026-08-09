@@ -16,6 +16,9 @@ void main() {
 
     // A time-sensitive + a celebration item live in Today
     expect(find.text('Match ready'), findsOneWidget);
+    expect(find.text('Victory Points earned'), findsOneWidget);
+    expect(find.textContaining('18 Victory Points'), findsOneWidget);
+    expect(find.textContaining('GCash'), findsNothing);
 
     // Team-invite gets inline Accept/Decline
     expect(find.text('ACCEPT'), findsOneWidget);

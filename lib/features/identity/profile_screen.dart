@@ -385,8 +385,8 @@ class _CareerStats extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _StatTile(
-            label: 'EARNED',
-            value: formatPeso(profile.totalPayoutPhp, decimals: 0),
+            label: 'VICTORY PTS',
+            value: '${profile.totalRewardPoints} VP',
           ),
         ),
       ],
@@ -553,7 +553,9 @@ class _RecentTournamentRow extends StatelessWidget {
             ),
           ),
           Text(
-            formatPeso(entry.payoutPhp, decimals: 0),
+            entry.tournament.usesWallet
+                ? '${entry.rewardPoints} VP'
+                : formatPeso(entry.payoutPhp, decimals: 0),
             style: LbType.rankNumeral(15, color: LbColors.lime),
           ),
         ],

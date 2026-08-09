@@ -266,7 +266,7 @@ disbursement, and presents a cash-flow wallet rather than stored balances.
 - [ ] Existing tournaments finish under their original model or are cancelled
       and reconciled before migration.
 - [x] Stop peso prize-pool accrual for new-economy tournaments.
-- [ ] Replace payout-account requirements with reward-wallet eligibility for
+- [x] Replace payout-account requirements with reward-wallet eligibility for
       new-economy tournaments.
 - [ ] Update bracket, ranking, and badge queries to use confirmed registration
       state instead of assuming `payment_status = 'paid'` forever.
@@ -319,7 +319,8 @@ wallet shows the authoritative results.
       bracket topology and immutable team/roster snapshots.
 - [x] Issue Victory Points only after verified tournament completion through
       balanced, immutable, idempotent per-player ledger grants.
-- [ ] Replace cash-payout notifications and profile aggregates.
+- [x] Replace cash-payout notifications and profile aggregates while retaining
+      explicit legacy payout fields and history.
 - [x] Add reward-grant activity to Wallet v2 history and Flutter presentation.
 
 Exit criteria: retrying completion cannot duplicate rewards, the awarded total
