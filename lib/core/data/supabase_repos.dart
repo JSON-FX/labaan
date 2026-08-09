@@ -1157,6 +1157,42 @@ class SupabaseWalletRepo implements WalletRepo {
     );
   }
 
+  @override
+  Future<List<LbCreditPack>> activeCreditPacks({
+    required CreditPackProvider provider,
+    required CreditPackPlatform platform,
+  }) async {
+    final rows = await _client
+        .from('credit_pack_config')
+        .select()
+        .eq('status', 'active')
+        .eq('provider', provider.snake)
+        .eq('platform', platform.snake)
+        .order('sort_order')
+        .order('credit_amount');
+    return [for (final row in rows) _creditPackFromRow(row)];
+  }
+
+  LbCreditPack _creditPackFromRow(Map<String, dynamic> row) => LbCreditPack(
+    id: row['id'] as String,
+    packCode: row['pack_code'] as String,
+    revision: (row['revision'] as num).toInt(),
+    provider: _enumFromSnake(
+      CreditPackProvider.values,
+      row['provider'] as String,
+    ),
+    platform: _enumFromSnake(
+      CreditPackPlatform.values,
+      row['platform'] as String,
+    ),
+    providerProductId: row['provider_product_id'] as String?,
+    creditAmount: (row['credit_amount'] as num).toInt(),
+    priceCentavos: (row['price_centavos'] as num).toInt(),
+    currencyCode: row['currency_code'] as String,
+    maxPurchasesPerDay: (row['max_purchases_per_day'] as num).toInt(),
+    sortOrder: (row['sort_order'] as num).toInt(),
+  );
+
   LbWalletBalance _walletBalanceFromJson(Map<String, dynamic> json) =>
       LbWalletBalance(
         currency: _walletCurrency(json['currencyCode'] as String),

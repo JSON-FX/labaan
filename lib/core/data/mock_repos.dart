@@ -766,7 +766,60 @@ class MockWalletRepo implements WalletRepo {
           nextCursor: null,
         ),
       );
+
+  @override
+  Future<List<LbCreditPack>> activeCreditPacks({
+    required CreditPackProvider provider,
+    required CreditPackPlatform platform,
+  }) => _delay([
+    for (final pack in _developmentCreditPacks)
+      if (pack.provider == provider && pack.platform == platform) pack,
+  ]);
 }
+
+final _developmentCreditPacks = [
+  for (final platform in [
+    CreditPackPlatform.web,
+    CreditPackPlatform.androidDirect,
+  ]) ...[
+    LbCreditPack(
+      id: 'mock_credit_50_${platform.name}',
+      packCode: 'dev_credit_50',
+      revision: 1,
+      provider: CreditPackProvider.paymongo,
+      platform: platform,
+      creditAmount: 50,
+      priceCentavos: 5000,
+      currencyCode: 'PHP',
+      maxPurchasesPerDay: 10,
+      sortOrder: 10,
+    ),
+    LbCreditPack(
+      id: 'mock_credit_100_${platform.name}',
+      packCode: 'dev_credit_100',
+      revision: 1,
+      provider: CreditPackProvider.paymongo,
+      platform: platform,
+      creditAmount: 100,
+      priceCentavos: 10000,
+      currencyCode: 'PHP',
+      maxPurchasesPerDay: 10,
+      sortOrder: 20,
+    ),
+    LbCreditPack(
+      id: 'mock_credit_250_${platform.name}',
+      packCode: 'dev_credit_250',
+      revision: 1,
+      provider: CreditPackProvider.paymongo,
+      platform: platform,
+      creditAmount: 250,
+      priceCentavos: 25000,
+      currencyCode: 'PHP',
+      maxPurchasesPerDay: 10,
+      sortOrder: 30,
+    ),
+  ],
+];
 
 class MockTeamsRepo implements TeamsRepo {
   MockTeamsRepo()

@@ -228,6 +228,11 @@ abstract class SettingsRepo {
 /// Player-owned, non-cashable wallet balances and append-only activity.
 abstract class WalletRepo {
   Future<LbWallet> currentWallet({int limit = 50, LbWalletCursor? before});
+
+  Future<List<LbCreditPack>> activeCreditPacks({
+    required CreditPackProvider provider,
+    required CreditPackPlatform platform,
+  });
 }
 
 /// Team management — create, invite, roster, leave.

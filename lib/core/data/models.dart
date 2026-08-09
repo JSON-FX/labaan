@@ -525,6 +525,45 @@ class LbAccountDeletionRequest {
 
 enum LbWalletCurrency { entryCredit, rewardPoint }
 
+enum CreditPackProvider { paymongo, appleIap }
+
+enum CreditPackPlatform { web, androidDirect, ios }
+
+/// One immutable, server-priced offer for purchasing Credits.
+///
+/// Checkout commands reference [id]. Clients may display these values, but
+/// must never submit their own price or Credit quantity.
+@immutable
+class LbCreditPack {
+  const LbCreditPack({
+    required this.id,
+    required this.packCode,
+    required this.revision,
+    required this.provider,
+    required this.platform,
+    this.providerProductId,
+    required this.creditAmount,
+    required this.priceCentavos,
+    required this.currencyCode,
+    required this.maxPurchasesPerDay,
+    required this.sortOrder,
+  });
+
+  final String id;
+  final String packCode;
+  final int revision;
+  final CreditPackProvider provider;
+  final CreditPackPlatform platform;
+  final String? providerProductId;
+  final int creditAmount;
+  final int priceCentavos;
+  final String currencyCode;
+  final int maxPurchasesPerDay;
+  final int sortOrder;
+
+  double get pricePhp => priceCentavos / 100;
+}
+
 enum LbWalletTransactionKind {
   topup,
   entryFee,

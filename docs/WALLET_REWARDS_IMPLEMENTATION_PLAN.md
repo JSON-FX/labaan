@@ -329,7 +329,9 @@ roster and verified result.
 
 ### Phase 3 - PayMongo Credit top-ups
 
-- [ ] Add Credit-pack configuration.
+- [x] Add immutable, server-controlled, provider/platform-aware Credit-pack
+      configuration and typed Flutter catalog access. Development prices are
+      placeholders; approved production pack sizes and prices remain open.
 - [ ] Implement top-up order creation and PayMongo Checkout.
 - [ ] Route webhook events by purpose and top-up order reference.
 - [ ] Credit only after a verified, deduplicated paid event.

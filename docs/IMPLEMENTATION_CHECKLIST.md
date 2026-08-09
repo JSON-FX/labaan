@@ -124,5 +124,8 @@ development environment, not merely drawn as screens.
       Wallet-linked Victory Point notification per positive grant, and show
       separate Victory Point earnings/reward history on player profiles while
       preserving legacy peso payout records
+- [x] Add immutable server-controlled Credit-pack revisions with explicit
+      PayMongo/App Store platform mappings, active-only client reads, no client
+      pricing writes, development seed offers, and typed Flutter catalog access
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

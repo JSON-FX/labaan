@@ -238,6 +238,35 @@ final walletProvider = FutureProvider.autoDispose<LbWallet>((ref) async {
   return ref.watch(walletRepoProvider).currentWallet();
 });
 
+class CreditPackCatalogQuery {
+  const CreditPackCatalogQuery({
+    required this.provider,
+    required this.platform,
+  });
+
+  final CreditPackProvider provider;
+  final CreditPackPlatform platform;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CreditPackCatalogQuery &&
+      other.provider == provider &&
+      other.platform == platform;
+
+  @override
+  int get hashCode => Object.hash(provider, platform);
+}
+
+final creditPackCatalogProvider = FutureProvider.autoDispose
+    .family<List<LbCreditPack>, CreditPackCatalogQuery>((ref, query) {
+      return ref
+          .watch(walletRepoProvider)
+          .activeCreditPacks(
+            provider: query.provider,
+            platform: query.platform,
+          );
+    });
+
 final teamByIdProvider = FutureProvider.autoDispose.family<LbTeam, String>((
   ref,
   id,
