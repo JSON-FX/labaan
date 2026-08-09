@@ -37,4 +37,26 @@ void main() {
 
     expect(sharedId, tournament.id);
   });
+
+  testWidgets('shows the published Victory Point reward formula', (
+    tester,
+  ) async {
+    setPhoneViewport(tester, height: 1100);
+    final tournament = LbFixtures.caviteOpen;
+    await tester.pumpWidget(
+      hostRoute(TournamentDetailScreen(slug: tournament.id)),
+    );
+    await pumpAndSettleForData(tester);
+
+    expect(find.text('100 VP/TEAM'), findsOneWidget);
+    expect(find.text('PUBLISHED REWARD RULE'), findsOneWidget);
+    expect(
+      find.textContaining('Adds 100 VP per confirmed team'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Cap 1600 VP · 1st 70% · 2nd 30%'),
+      findsOneWidget,
+    );
+  });
 }

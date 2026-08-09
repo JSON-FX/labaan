@@ -277,6 +277,15 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       balance: creditBalance,
                       cost: t.entryCreditCost ?? 0,
                     ),
+                    if (!t.hasRewardRule) ...[
+                      const SizedBox(height: 8),
+                      const LbCard(
+                        child: Text(
+                          'REWARD RULE PENDING · Registration will open after '
+                          'the Victory Point formula is published.',
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 10),
                   ] else ...[
                     const SectionLabel(
@@ -334,8 +343,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       cost: t.entryCreditCost ?? 0,
                       balance: creditBalance,
                       busy: _submitting,
+                      rewardRuleReady: t.hasRewardRule,
                       onPressed:
                           _submitting ||
+                              !t.hasRewardRule ||
                               creditBalance == null ||
                               creditBalance < (t.entryCreditCost ?? 0)
                           ? null
@@ -864,12 +875,14 @@ class _CreditCta extends StatelessWidget {
     required this.cost,
     required this.balance,
     required this.busy,
+    required this.rewardRuleReady,
     required this.onPressed,
   });
 
   final int cost;
   final int? balance;
   final bool busy;
+  final bool rewardRuleReady;
   final VoidCallback? onPressed;
 
   @override
@@ -897,6 +910,8 @@ class _CreditCta extends StatelessWidget {
             child: SlantButton(
               label: busy
                   ? 'Reserving…'
+                  : !rewardRuleReady
+                  ? 'Reward rule pending'
                   : enough
                   ? 'Use Credits & enter'
                   : 'Insufficient Credits',

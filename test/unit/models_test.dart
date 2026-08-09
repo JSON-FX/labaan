@@ -81,6 +81,20 @@ void main() {
       expect(d, isNotNull);
       expect(d!.isNegative, false);
     });
+
+    test('Wallet tournament exposes its published reward rule', () {
+      final tournament = LbFixtures.caviteOpen;
+      expect(tournament.hasRewardRule, isTrue);
+      expect(tournament.rewardPoolIsLocked, isFalse);
+      expect(tournament.rewardCompetitorBasis, RewardCompetitorBasis.team);
+      expect(tournament.rewardPointsPerCompetitor, 100);
+      expect(
+        (tournament.rewardFirstPlaceBps ?? 0) +
+            (tournament.rewardSecondPlaceBps ?? 0) +
+            (tournament.rewardThirdPlaceBps ?? 0),
+        10000,
+      );
+    });
   });
 
   test('BracketFormat.displayName spec table', () {

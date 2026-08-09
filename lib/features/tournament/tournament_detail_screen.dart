@@ -38,13 +38,16 @@ class TournamentDetailScreen extends ConsumerWidget {
       return;
     }
     final link = tournamentShareUri(tournament.id);
+    final economySummary = tournament.usesWallet
+        ? '${_rewardMetricValue(tournament)} reward'
+        : '${formatPeso(tournament.prizePoolPhp, decimals: 0)} prize pool';
     await SharePlus.instance.share(
       ShareParams(
         title: tournament.title,
         subject: 'Join ${tournament.title} on Labaan',
         text:
             'Join ${tournament.title} on Labaan. '
-            '${tournament.game} · ${formatPeso(tournament.prizePoolPhp, decimals: 0)} prize pool\n$link',
+            '${tournament.game} · $economySummary\n$link',
         sharePositionOrigin: origin,
       ),
     );
@@ -113,9 +116,9 @@ class TournamentDetailScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _MetricTile(
-                          label: 'PRIZE',
+                          label: t.usesWallet ? 'REWARD' : 'PRIZE',
                           value: t.usesWallet
-                              ? 'TBD'
+                              ? _rewardMetricValue(t)
                               : formatPeso(t.prizePoolPhp, decimals: 0),
                         ),
                       ),
@@ -137,6 +140,10 @@ class TournamentDetailScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  if (t.usesWallet) ...[
+                    const SizedBox(height: 10),
+                    _WalletRewardCard(tournament: t),
+                  ],
                   const SizedBox(height: 14),
                   const SectionLabel('Organizer & moderator'),
                   const SizedBox(height: 8),
@@ -197,6 +204,82 @@ String _formatBadge(String snake) => switch (snake) {
   'roundRobin' => 'R-ROBIN',
   _ => snake.toUpperCase(),
 };
+
+String _rewardBasisLabel(RewardCompetitorBasis? basis, {bool plural = false}) {
+  return switch (basis) {
+    RewardCompetitorBasis.team => plural ? 'teams' : 'team',
+    RewardCompetitorBasis.registration => plural ? 'entrants' : 'entrant',
+    null => plural ? 'competitors' : 'competitor',
+  };
+}
+
+String _rewardMetricValue(LbTournament tournament) {
+  if (tournament.finalRewardPool case final int pool) return '$pool VP';
+  if (tournament.rewardPointsPerCompetitor case final int rate) {
+    return '$rate VP/${_rewardBasisLabel(tournament.rewardCompetitorBasis).toUpperCase()}';
+  }
+  return 'PENDING';
+}
+
+String _placementShare(int? basisPoints) {
+  if (basisPoints == null) return '0%';
+  final percent = basisPoints / 100;
+  return percent == percent.roundToDouble()
+      ? '${percent.toInt()}%'
+      : '${percent.toStringAsFixed(2)}%';
+}
+
+class _WalletRewardCard extends StatelessWidget {
+  const _WalletRewardCard({required this.tournament});
+
+  final LbTournament tournament;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRule = tournament.hasRewardRule;
+    final locked = tournament.rewardPoolIsLocked;
+    final basis = _rewardBasisLabel(
+      tournament.rewardCompetitorBasis,
+      plural: true,
+    );
+    final summary = !hasRule
+        ? 'Registration opens after the organizer publishes an approved rule.'
+        : locked
+        ? 'Locked from ${tournament.rewardCompetitorCount ?? 0} confirmed $basis.'
+        : 'Adds ${tournament.rewardPointsPerCompetitor} VP per confirmed '
+              '${_rewardBasisLabel(tournament.rewardCompetitorBasis)}. '
+              'The final pool locks when registration closes.';
+    final cap = tournament.rewardPoolCap;
+
+    return LbCard(
+      highlighted: locked,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            locked ? 'FINAL VICTORY POINT POOL' : 'PUBLISHED REWARD RULE',
+            style: LbType.metaSm.copyWith(
+              color: locked ? LbColors.lime : LbColors.textDim,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(summary, style: LbType.bodySm),
+          if (hasRule) ...[
+            const SizedBox(height: 7),
+            Text(
+              '${cap == null ? "No pool cap" : "Cap $cap VP"} · '
+              '1st ${_placementShare(tournament.rewardFirstPlaceBps)} · '
+              '2nd ${_placementShare(tournament.rewardSecondPlaceBps)} · '
+              '3rd ${_placementShare(tournament.rewardThirdPlaceBps)}',
+              style: LbType.metaSm.copyWith(color: LbColors.textMuted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _HeroBanner extends StatelessWidget {
   const _HeroBanner({required this.tournament});

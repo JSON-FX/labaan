@@ -82,9 +82,9 @@ Store product identifiers because the brand and display terminology may change.
 - [ ] Registration closing behavior is explicit: start, postpone, or cancel.
 - [ ] Underfilled elimination brackets assign byes using published seeding or a
       transparent randomized draw.
-- [ ] Reward rules are snapshotted before registration opens and cannot be
+- [x] Reward rules are snapshotted before registration opens and cannot be
       changed after the first confirmed entrant without cancelling/reopening.
-- [ ] The final reward pool locks when registration closes.
+- [x] The final reward pool locks when registration closes.
 - [ ] Paid entry fees do not directly create withdrawable money or cash prizes.
 - [ ] Match results are determined by player skill and use the existing result,
       evidence, verification, dispute, and moderator workflows.
@@ -112,11 +112,13 @@ Example tier schedule:
 | 8-11 | 200 VP |
 | 12-16 | 300 VP |
 
-- [ ] Choose formula-based or tier-based rewards for the MVP.
+- [x] Choose formula-based rewards for the MVP; the per-competitor rate and cap
+      remain approved tournament configuration rather than a hard-coded global
+      conversion rate.
 - [ ] Define minimum entrants, maximum entrants, reward caps, and rounding.
-- [ ] Calculate from confirmed entrants at registration lock, not reservations
+- [x] Calculate from confirmed entrants at registration lock, not reservations
       or pending top-ups.
-- [ ] For team tournaments, calculate from confirmed eligible teams unless the
+- [x] For team tournaments, calculate from confirmed eligible teams unless the
       published rules explicitly use roster size.
 
 ### B. Organizer-sponsored boost
@@ -257,7 +259,7 @@ disbursement, and presents a cash-flow wallet rather than stored balances.
       and payout records as immutable legacy history.
 - [x] Do not rewrite old money values as Credits or Victory Points.
 - [x] Add an explicit legacy/new economy marker to tournaments.
-- [ ] New-economy tournaments use Credit fees and reward rules.
+- [x] New-economy tournaments use Credit fees and reward rules.
 - [ ] Existing tournaments finish under their original model or are cancelled
       and reconciled before migration.
 - [x] Stop peso prize-pool accrual for new-economy tournaments.
@@ -307,9 +309,9 @@ wallet shows the authoritative results.
 
 ### Phase 2 - Reward calculation and Victory Point awards
 
-- [ ] Add immutable reward-rule snapshots to tournaments.
+- [x] Add immutable reward-rule snapshots to tournaments.
 - [ ] Support underfilled brackets with minimum counts and byes.
-- [ ] Calculate and lock the final reward pool at registration close.
+- [x] Calculate and lock the final reward pool at registration close.
 - [ ] Implement idempotent placement/team reward allocation.
 - [ ] Issue Victory Points only after verified tournament completion.
 - [ ] Replace cash-payout notifications and profile aggregates.
@@ -412,7 +414,7 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 - [x] Two simultaneous entry attempts -> only one successful debit/registration.
 - [ ] Underfilled bracket at or above minimum -> fair byes and successful start.
 - [ ] Below-minimum tournament -> cancellation and exact Credit refunds.
-- [ ] Entry-scaled pool -> final pool based only on confirmed entrants.
+- [x] Entry-scaled pool -> final pool based only on confirmed entrants.
 - [ ] Streamer sponsor payment -> locked allocation -> winner awards.
 - [ ] Duplicate tournament-completion event -> no duplicate Victory Points.
 - [ ] PayMongo payment -> duplicate webhooks -> one Credit grant.

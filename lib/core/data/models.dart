@@ -143,6 +143,15 @@ class LbTournament {
     required this.createdAt,
     this.economyMode = TournamentEconomy.legacyCash,
     this.entryCreditCost,
+    this.rewardCompetitorBasis,
+    this.rewardPointsPerCompetitor,
+    this.rewardPoolCap,
+    this.rewardFirstPlaceBps,
+    this.rewardSecondPlaceBps,
+    this.rewardThirdPlaceBps,
+    this.rewardCompetitorCount,
+    this.finalRewardPool,
+    this.rewardPoolLockedAt,
   });
 
   final String id;
@@ -165,11 +174,23 @@ class LbTournament {
   final DateTime createdAt;
   final TournamentEconomy economyMode;
   final int? entryCreditCost;
+  final RewardCompetitorBasis? rewardCompetitorBasis;
+  final int? rewardPointsPerCompetitor;
+  final int? rewardPoolCap;
+  final int? rewardFirstPlaceBps;
+  final int? rewardSecondPlaceBps;
+  final int? rewardThirdPlaceBps;
+  final int? rewardCompetitorCount;
+  final int? finalRewardPool;
+  final DateTime? rewardPoolLockedAt;
 
   bool get isLive => status == TournamentStatus.live;
   bool get isOpen =>
       status == TournamentStatus.open || status == TournamentStatus.fillingUp;
   bool get usesWallet => economyMode == TournamentEconomy.walletV2;
+  bool get hasRewardRule =>
+      rewardCompetitorBasis != null && rewardPointsPerCompetitor != null;
+  bool get rewardPoolIsLocked => rewardPoolLockedAt != null;
   int get slotsRemaining => maxTeams - registeredTeams;
 
   /// Countdown to lock — null if lock time isn't scheduled or has passed.
@@ -183,6 +204,8 @@ class LbTournament {
 enum RegistrationPaymentStatus { pending, paid, refunded, failed }
 
 enum TournamentEconomy { legacyCash, walletV2 }
+
+enum RewardCompetitorBasis { registration, team }
 
 @immutable
 class LbRegistration {

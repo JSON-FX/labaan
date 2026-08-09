@@ -107,5 +107,8 @@ development environment, not merely drawn as screens.
 - [x] Replace per-registration payment for Wallet v2 tournaments with atomic
       Credit-funded entry/refund, balance-aware Flutter registration UI, and
       explicit insufficient-balance handling while preserving legacy PayMongo
+- [x] Snapshot formula-based Victory Point reward rules, block entry until the
+      rule is published, lock the capped final pool from confirmed competitors
+      with the bracket transaction, and expose the formula in Flutter
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

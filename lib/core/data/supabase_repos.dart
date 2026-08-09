@@ -130,6 +130,23 @@ LbTournament _tournamentFromRow(Map<String, dynamic> row) {
       row['economy_mode'] as String? ?? 'legacy_cash',
     ),
     entryCreditCost: (row['entry_credit_cost'] as num?)?.toInt(),
+    rewardCompetitorBasis: row['reward_competitor_basis'] == null
+        ? null
+        : _enumFromSnake(
+            RewardCompetitorBasis.values,
+            row['reward_competitor_basis'] as String,
+          ),
+    rewardPointsPerCompetitor: (row['reward_points_per_competitor'] as num?)
+        ?.toInt(),
+    rewardPoolCap: (row['reward_pool_cap'] as num?)?.toInt(),
+    rewardFirstPlaceBps: (row['reward_first_place_bps'] as num?)?.toInt(),
+    rewardSecondPlaceBps: (row['reward_second_place_bps'] as num?)?.toInt(),
+    rewardThirdPlaceBps: (row['reward_third_place_bps'] as num?)?.toInt(),
+    rewardCompetitorCount: (row['reward_competitor_count'] as num?)?.toInt(),
+    finalRewardPool: (row['final_reward_pool'] as num?)?.toInt(),
+    rewardPoolLockedAt: row['reward_pool_locked_at'] == null
+        ? null
+        : DateTime.parse(row['reward_pool_locked_at'] as String),
     status: _enumFromSnake(TournamentStatus.values, row['status'] as String),
     organizerId: row['organizer_id'] as String,
     moderatorIds: _relatedUserIds(row, 'tournament_moderators'),

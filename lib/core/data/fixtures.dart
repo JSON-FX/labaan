@@ -224,6 +224,12 @@ class LbFixtures {
     createdAt: now.subtract(const Duration(days: 1)),
     economyMode: TournamentEconomy.walletV2,
     entryCreditCost: 250,
+    rewardCompetitorBasis: RewardCompetitorBasis.team,
+    rewardPointsPerCompetitor: 100,
+    rewardPoolCap: 1600,
+    rewardFirstPlaceBps: 7000,
+    rewardSecondPlaceBps: 3000,
+    rewardThirdPlaceBps: 0,
   );
 
   static final LbTournament qcGrind08 = LbTournament(
