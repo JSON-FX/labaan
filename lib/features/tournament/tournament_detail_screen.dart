@@ -229,6 +229,27 @@ String _placementShare(int? basisPoints) {
       : '${percent.toStringAsFixed(2)}%';
 }
 
+String _minimumCloseSummary(LbTournament tournament) {
+  final minimum = tournament.minimumTeams;
+  final action = tournament.belowMinimumAction;
+  if (minimum == null || action == null) {
+    return 'Minimum-team close rule pending.';
+  }
+  final outcome = tournament.registrationCloseOutcome;
+  final count = tournament.registrationCloseCompetitorCount;
+  if (outcome == RegistrationCloseOutcome.postponed && count != null) {
+    return 'Last close postponed at $count/$minimum teams; registration reopened.';
+  }
+  if (outcome == RegistrationCloseOutcome.cancelled && count != null) {
+    return 'Cancelled at $count/$minimum teams; all entry Credits refunded.';
+  }
+  final belowMinimum = switch (action) {
+    BelowMinimumAction.postpone => 'registration reopens',
+    BelowMinimumAction.cancel => 'full Credit refund and cancellation',
+  };
+  return 'Starts with $minimum confirmed teams · below minimum: $belowMinimum.';
+}
+
 class _WalletRewardCard extends StatelessWidget {
   const _WalletRewardCard({required this.tournament});
 
@@ -265,6 +286,11 @@ class _WalletRewardCard extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(summary, style: LbType.bodySm),
+          const SizedBox(height: 5),
+          Text(
+            _minimumCloseSummary(tournament),
+            style: LbType.metaSm.copyWith(color: LbColors.textMuted),
+          ),
           if (hasRule) ...[
             const SizedBox(height: 7),
             Text(

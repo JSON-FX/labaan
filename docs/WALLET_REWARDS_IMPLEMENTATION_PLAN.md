@@ -78,9 +78,9 @@ Store product identifiers because the brand and display terminology may change.
 
 ### Tournament rules
 
-- [ ] Every tournament declares a minimum and maximum participant/team count.
-- [ ] Registration closing behavior is explicit: start, postpone, or cancel.
-- [ ] Underfilled elimination brackets assign byes using published seeding or a
+- [x] Every Wallet tournament declares a minimum and maximum team count.
+- [x] Registration closing behavior is explicit: start, postpone, or cancel.
+- [x] Underfilled elimination brackets assign byes using published seeding or a
       transparent randomized draw.
 - [x] Reward rules are snapshotted before registration opens and cannot be
       changed after the first confirmed entrant without cancelling/reopening.
@@ -310,7 +310,7 @@ wallet shows the authoritative results.
 ### Phase 2 - Reward calculation and Victory Point awards
 
 - [x] Add immutable reward-rule snapshots to tournaments.
-- [ ] Support underfilled brackets with minimum counts and byes.
+- [x] Support underfilled brackets with minimum counts and byes.
 - [x] Calculate and lock the final reward pool at registration close.
 - [ ] Implement idempotent placement/team reward allocation.
 - [ ] Issue Victory Points only after verified tournament completion.
@@ -412,8 +412,8 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 
 - [x] Seeded Credit balance -> tournament entry -> correct remaining balance.
 - [x] Two simultaneous entry attempts -> only one successful debit/registration.
-- [ ] Underfilled bracket at or above minimum -> fair byes and successful start.
-- [ ] Below-minimum tournament -> cancellation and exact Credit refunds.
+- [x] Underfilled bracket at or above minimum -> fair byes and successful start.
+- [x] Below-minimum tournament -> cancellation and exact Credit refunds.
 - [x] Entry-scaled pool -> final pool based only on confirmed entrants.
 - [ ] Streamer sponsor payment -> locked allocation -> winner awards.
 - [ ] Duplicate tournament-completion event -> no duplicate Victory Points.

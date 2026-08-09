@@ -110,5 +110,8 @@ development environment, not merely drawn as screens.
 - [x] Snapshot formula-based Victory Point reward rules, block entry until the
       rule is published, lock the capped final pool from confirmed competitors
       with the bracket transaction, and expose the formula in Flutter
+- [x] Require Wallet tournaments to publish a minimum team count and explicit
+      postpone/cancel policy; start underfilled brackets with deterministic
+      byes or atomically issue exact Credit refunds when cancellation wins
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

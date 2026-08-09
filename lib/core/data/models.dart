@@ -152,6 +152,11 @@ class LbTournament {
     this.rewardCompetitorCount,
     this.finalRewardPool,
     this.rewardPoolLockedAt,
+    this.minimumTeams,
+    this.belowMinimumAction,
+    this.registrationCloseOutcome,
+    this.registrationCloseCompetitorCount,
+    this.registrationClosedAt,
   });
 
   final String id;
@@ -183,6 +188,11 @@ class LbTournament {
   final int? rewardCompetitorCount;
   final int? finalRewardPool;
   final DateTime? rewardPoolLockedAt;
+  final int? minimumTeams;
+  final BelowMinimumAction? belowMinimumAction;
+  final RegistrationCloseOutcome? registrationCloseOutcome;
+  final int? registrationCloseCompetitorCount;
+  final DateTime? registrationClosedAt;
 
   bool get isLive => status == TournamentStatus.live;
   bool get isOpen =>
@@ -191,6 +201,8 @@ class LbTournament {
   bool get hasRewardRule =>
       rewardCompetitorBasis != null && rewardPointsPerCompetitor != null;
   bool get rewardPoolIsLocked => rewardPoolLockedAt != null;
+  bool get hasMinimumCloseRule =>
+      minimumTeams != null && belowMinimumAction != null;
   int get slotsRemaining => maxTeams - registeredTeams;
 
   /// Countdown to lock — null if lock time isn't scheduled or has passed.
@@ -206,6 +218,10 @@ enum RegistrationPaymentStatus { pending, paid, refunded, failed }
 enum TournamentEconomy { legacyCash, walletV2 }
 
 enum RewardCompetitorBasis { registration, team }
+
+enum BelowMinimumAction { postpone, cancel }
+
+enum RegistrationCloseOutcome { started, postponed, cancelled }
 
 @immutable
 class LbRegistration {

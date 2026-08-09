@@ -147,6 +147,24 @@ LbTournament _tournamentFromRow(Map<String, dynamic> row) {
     rewardPoolLockedAt: row['reward_pool_locked_at'] == null
         ? null
         : DateTime.parse(row['reward_pool_locked_at'] as String),
+    minimumTeams: (row['minimum_teams'] as num?)?.toInt(),
+    belowMinimumAction: row['below_minimum_action'] == null
+        ? null
+        : _enumFromSnake(
+            BelowMinimumAction.values,
+            row['below_minimum_action'] as String,
+          ),
+    registrationCloseOutcome: row['registration_close_outcome'] == null
+        ? null
+        : _enumFromSnake(
+            RegistrationCloseOutcome.values,
+            row['registration_close_outcome'] as String,
+          ),
+    registrationCloseCompetitorCount:
+        (row['registration_close_competitor_count'] as num?)?.toInt(),
+    registrationClosedAt: row['registration_closed_at'] == null
+        ? null
+        : DateTime.parse(row['registration_closed_at'] as String),
     status: _enumFromSnake(TournamentStatus.values, row['status'] as String),
     organizerId: row['organizer_id'] as String,
     moderatorIds: _relatedUserIds(row, 'tournament_moderators'),

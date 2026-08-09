@@ -58,5 +58,11 @@ void main() {
       find.textContaining('Cap 1600 VP · 1st 70% · 2nd 30%'),
       findsOneWidget,
     );
+    expect(
+      find.textContaining(
+        'Starts with 4 confirmed teams · below minimum: full Credit refund',
+      ),
+      findsOneWidget,
+    );
   });
 }

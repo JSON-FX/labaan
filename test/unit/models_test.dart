@@ -88,6 +88,9 @@ void main() {
       expect(tournament.rewardPoolIsLocked, isFalse);
       expect(tournament.rewardCompetitorBasis, RewardCompetitorBasis.team);
       expect(tournament.rewardPointsPerCompetitor, 100);
+      expect(tournament.hasMinimumCloseRule, isTrue);
+      expect(tournament.minimumTeams, 4);
+      expect(tournament.belowMinimumAction, BelowMinimumAction.cancel);
       expect(
         (tournament.rewardFirstPlaceBps ?? 0) +
             (tournament.rewardSecondPlaceBps ?? 0) +

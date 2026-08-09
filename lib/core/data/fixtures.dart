@@ -230,6 +230,8 @@ class LbFixtures {
     rewardFirstPlaceBps: 7000,
     rewardSecondPlaceBps: 3000,
     rewardThirdPlaceBps: 0,
+    minimumTeams: 4,
+    belowMinimumAction: BelowMinimumAction.cancel,
   );
 
   static final LbTournament qcGrind08 = LbTournament(
