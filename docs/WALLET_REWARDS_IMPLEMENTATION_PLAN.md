@@ -335,7 +335,10 @@ roster and verified result.
 - [x] Add distinct top-up order and global purpose-aware provider-event
       schemas with immutable economic snapshots, unique idempotency/provider
       references, constrained lifecycles, RLS, and reconciliation fields.
-- [ ] Implement top-up order creation and PayMongo Checkout.
+- [x] Implement retry-safe top-up order creation and PayMongo v2 Checkout with
+      server-owned economics, direct-platform validation, allow-listed return
+      and hosted URLs, durable session reuse, daily limits, and a reconciliation
+      cutoff before provider idempotency expires.
 - [ ] Route webhook events by purpose and top-up order reference.
 - [ ] Credit only after a verified, deduplicated paid event.
 - [ ] Handle pending, failure, expiry, refund, reversal, and duplicate capture.

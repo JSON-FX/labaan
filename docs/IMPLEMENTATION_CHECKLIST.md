@@ -130,5 +130,8 @@ development environment, not merely drawn as screens.
 - [x] Separate Credit top-up orders from legacy registration payments with
       immutable pack snapshots, constrained lifecycle/reconciliation fields,
       and a globally deduplicated purpose-aware provider-event receipt
+- [x] Create PayMongo v2 Credit top-up checkouts from server-priced packs with
+      exact order/session retry reuse, provider idempotency, URL allow-listing,
+      daily purchase limits, and uncertainty reconciliation safeguards
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending
