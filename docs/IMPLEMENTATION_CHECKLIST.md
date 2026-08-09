@@ -127,5 +127,8 @@ development environment, not merely drawn as screens.
 - [x] Add immutable server-controlled Credit-pack revisions with explicit
       PayMongo/App Store platform mappings, active-only client reads, no client
       pricing writes, development seed offers, and typed Flutter catalog access
+- [x] Separate Credit top-up orders from legacy registration payments with
+      immutable pack snapshots, constrained lifecycle/reconciliation fields,
+      and a globally deduplicated purpose-aware provider-event receipt
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

@@ -332,6 +332,9 @@ roster and verified result.
 - [x] Add immutable, server-controlled, provider/platform-aware Credit-pack
       configuration and typed Flutter catalog access. Development prices are
       placeholders; approved production pack sizes and prices remain open.
+- [x] Add distinct top-up order and global purpose-aware provider-event
+      schemas with immutable economic snapshots, unique idempotency/provider
+      references, constrained lifecycles, RLS, and reconciliation fields.
 - [ ] Implement top-up order creation and PayMongo Checkout.
 - [ ] Route webhook events by purpose and top-up order reference.
 - [ ] Credit only after a verified, deduplicated paid event.
