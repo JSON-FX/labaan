@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import '../domain/ranks.dart';
 import '../domain/tournament_tier.dart';
@@ -186,6 +187,8 @@ class MockMyTournamentsRepo implements MyTournamentsRepo {
         tournament: LbFixtures.liveManilaClash,
         matchReady: true,
         currentBracketNode: 'UPPER · R2',
+        currentMatchId: 'm_u3',
+        matchAction: LbMatchAction.verifyResult,
       ),
     ],
     upcoming: [
@@ -266,13 +269,18 @@ class MockBracketRepo implements BracketRepo {
         ),
       ],
       grandFinal: null,
+      teams: {
+        LbFixtures.teamMnl.id: LbFixtures.teamMnl,
+        LbFixtures.teamCebuKings.id: LbFixtures.teamCebuKings,
+        LbFixtures.teamDavaoGg.id: LbFixtures.teamDavaoGg,
+      },
     );
   }
 }
 
 class MockRegistrationRepo implements RegistrationRepo {
   @override
-  Future<LbRegistration> register({
+  Future<RegistrationCheckout> register({
     required String tournamentId,
     required String userId,
     String? teamId,
@@ -287,16 +295,20 @@ class MockRegistrationRepo implements RegistrationRepo {
       PayMethod.maya => RegistrationPaymentStatus.pending,
       PayMethod.card => RegistrationPaymentStatus.failed,
     };
-    return LbRegistration(
-      id: 'reg_${DateTime.fromMillisecondsSinceEpoch(0).microsecond}',
-      tournamentId: tournamentId,
-      userId: userId,
-      teamId: teamId,
-      paymentStatus: status,
-      paidAt: status == RegistrationPaymentStatus.paid ? LbFixtures.now : null,
-      amountPhp: t.entryFeePhp,
-      commissionCollectedPhp: commission,
-      paymongoRef: 'paymongo_mock_${method.name}',
+    return RegistrationCheckout(
+      registration: LbRegistration(
+        id: 'reg_${DateTime.fromMillisecondsSinceEpoch(0).microsecond}',
+        tournamentId: tournamentId,
+        userId: userId,
+        teamId: teamId,
+        paymentStatus: status,
+        paidAt: status == RegistrationPaymentStatus.paid
+            ? LbFixtures.now
+            : null,
+        amountPhp: t.entryFeePhp,
+        commissionCollectedPhp: commission,
+        paymongoRef: 'paymongo_mock_${method.name}',
+      ),
     );
   }
 
@@ -310,12 +322,33 @@ class MockRegistrationRepo implements RegistrationRepo {
 
 class MockResultsRepo implements ResultsRepo {
   @override
-  Future<String> requestScreenshotUploadUrl({
+  Future<LbMatch> byId(String matchId) => _delay(
+    LbMatch(
+      id: matchId,
+      tournamentId: LbFixtures.liveManilaClash.id,
+      round: 2,
+      bracketSide: BracketSide.upper,
+      teamAId: LbFixtures.teamMnl.id,
+      teamBId: LbFixtures.teamDavaoGg.id,
+      scoreA: 2,
+      scoreB: 1,
+      status: LbMatchStatus.awaitingVerification,
+      submittedByUserId: 'u_sage',
+      submittedTeamId: LbFixtures.teamDavaoGg.id,
+      screenshotUrl: 'u_sage/$matchId/proof.jpg',
+    ),
+  );
+
+  @override
+  Future<String> uploadScreenshot({
+    required String userId,
     required String matchId,
-    required int contentLengthBytes,
+    required Uint8List bytes,
+    required String contentType,
+    required String extension,
   }) async {
     await Future<void>.delayed(_kWriteLatency);
-    return 'https://storage.mock/labaan/matches/$matchId?sig=preSigned';
+    return '$userId/$matchId/proof.$extension';
   }
 
   @override
@@ -323,8 +356,19 @@ class MockResultsRepo implements ResultsRepo {
     required String matchId,
     required int scoreA,
     required int scoreB,
-    required String screenshotUrl,
+    required String screenshotPath,
   }) async {
+    await Future<void>.delayed(_kWriteLatency);
+  }
+
+  @override
+  Future<String?> screenshotPreviewUrl(String screenshotPath) async {
+    await Future<void>.delayed(_kReadLatency);
+    return null;
+  }
+
+  @override
+  Future<void> verify({required String matchId}) async {
     await Future<void>.delayed(_kWriteLatency);
   }
 
@@ -332,6 +376,7 @@ class MockResultsRepo implements ResultsRepo {
   Future<void> openDispute({
     required String matchId,
     required String reason,
+    required String detail,
   }) async {
     await Future<void>.delayed(_kWriteLatency);
   }
@@ -342,6 +387,8 @@ class MockProfileRepo implements ProfileRepo {
     : _profiles = profiles;
 
   final Map<String, LbPlayerProfile> _profiles;
+  Uint8List? lastAvatarBytes;
+  String? lastAvatarContentType;
 
   @override
   Future<LbPlayerProfile> byId(String userId) => _delay(_profileFor(userId));
@@ -383,8 +430,41 @@ class MockProfileRepo implements ProfileRepo {
   }
 
   @override
-  Future<void> updateAvatar(String userId, String assetUri) async {
+  Future<String> uploadAvatar({
+    required String userId,
+    required Uint8List bytes,
+    required String contentType,
+  }) async {
     await Future<void>.delayed(_kWriteLatency);
+    lastAvatarBytes = bytes;
+    lastAvatarContentType = contentType;
+    final avatarUrl = 'https://example.test/avatars/$userId/avatar';
+    final existing = _profileFor(userId);
+    _profiles[userId] = LbPlayerProfile(
+      user: LbUser(
+        id: existing.user.id,
+        username: existing.user.username,
+        email: existing.user.email,
+        phone: existing.user.phone,
+        region: existing.user.region,
+        avatarUrl: avatarUrl,
+        createdAt: existing.user.createdAt,
+        isBanned: existing.user.isBanned,
+        role: existing.user.role,
+        games: existing.user.games,
+        hasCompletedSetup: existing.user.hasCompletedSetup,
+      ),
+      rank: existing.rank,
+      badges: existing.badges,
+      gamesPlayed: existing.gamesPlayed,
+      totalMatches: existing.totalMatches,
+      totalWins: existing.totalWins,
+      totalLosses: existing.totalLosses,
+      totalPayoutPhp: existing.totalPayoutPhp,
+      teamIds: existing.teamIds,
+      recentTournaments: existing.recentTournaments,
+    );
+    return avatarUrl;
   }
 
   @override
@@ -401,6 +481,7 @@ class MockProfileRepo implements ProfileRepo {
 class MockSettingsRepo implements SettingsRepo {
   LbNotificationPreferences _preferences = LbNotificationPreferences.defaults();
   LbPayoutAccount? _payoutAccount;
+  LbAccountDeletionRequest? _deletionRequest;
 
   @override
   Future<LbNotificationPreferences> notificationPreferences(String userId) =>
@@ -430,17 +511,106 @@ class MockSettingsRepo implements SettingsRepo {
     await Future<void>.delayed(_kWriteLatency);
     _payoutAccount = null;
   }
+
+  @override
+  Future<LbAccountDeletionRequest?> accountDeletionRequest(String userId) =>
+      _delay(_deletionRequest);
+
+  @override
+  Future<LbAccountDeletionRequest> requestAccountDeletion() async {
+    await Future<void>.delayed(_kWriteLatency);
+    final now = LbFixtures.now;
+    return _deletionRequest = LbAccountDeletionRequest(
+      id: 'deletion_request_1',
+      userId: LbFixtures.me.id,
+      status: LbAccountDeletionStatus.pending,
+      requestedAt: now,
+      scheduledFor: now.add(const Duration(days: 30)),
+    );
+  }
+
+  @override
+  Future<LbAccountDeletionRequest> cancelAccountDeletion() async {
+    await Future<void>.delayed(_kWriteLatency);
+    final current = _deletionRequest!;
+    return _deletionRequest = LbAccountDeletionRequest(
+      id: current.id,
+      userId: current.userId,
+      status: LbAccountDeletionStatus.cancelled,
+      requestedAt: current.requestedAt,
+      scheduledFor: current.scheduledFor,
+      cancelledAt: LbFixtures.now,
+    );
+  }
+}
+
+class MockWalletRepo implements WalletRepo {
+  @override
+  Future<LbWallet> currentWallet({int limit = 50}) => _delay(
+    LbWallet(
+      totalPrizeCentavos: 18400,
+      totalEntryFeeCentavos: 65000,
+      netCashFlowCentavos: -46600,
+      pendingPrizeCentavos: 0,
+      transactions: [
+        LbWalletTransaction(
+          id: 'wallet_prize_1',
+          kind: LbWalletTransactionKind.prize,
+          tournamentId: 't_qc7',
+          tournamentTitle: 'QC Grind #07',
+          amountCentavos: 18400,
+          method: 'gcash',
+          status: 'completed',
+          occurredAt: LbFixtures.now.subtract(const Duration(days: 5)),
+        ),
+        LbWalletTransaction(
+          id: 'wallet_fee_2',
+          kind: LbWalletTransactionKind.entryFee,
+          tournamentId: 't_allstars',
+          tournamentTitle: 'All-Stars Season 3',
+          amountCentavos: -50000,
+          method: 'maya',
+          status: 'paid',
+          occurredAt: LbFixtures.now.subtract(const Duration(days: 2)),
+        ),
+        LbWalletTransaction(
+          id: 'wallet_fee_1',
+          kind: LbWalletTransactionKind.entryFee,
+          tournamentId: 't_manila',
+          tournamentTitle: 'Manila Clash #42',
+          amountCentavos: -10000,
+          method: 'gcash',
+          status: 'paid',
+          occurredAt: LbFixtures.now.subtract(const Duration(days: 3)),
+        ),
+        LbWalletTransaction(
+          id: 'wallet_fee_3',
+          kind: LbWalletTransactionKind.entryFee,
+          tournamentId: 't_qc7',
+          tournamentTitle: 'QC Grind #07',
+          amountCentavos: -5000,
+          method: 'card',
+          status: 'paid',
+          occurredAt: LbFixtures.now.subtract(const Duration(days: 10)),
+        ),
+      ].take(limit).toList(),
+    ),
+  );
 }
 
 class MockTeamsRepo implements TeamsRepo {
-  @override
-  Future<LbTeam> byId(String teamId) =>
-      _delay(LbFixtures.allTeams.firstWhere((t) => t.id == teamId));
+  MockTeamsRepo()
+    : _teams = {for (final team in LbFixtures.allTeams) team.id: team};
+
+  final Map<String, LbTeam> _teams;
 
   @override
-  Future<List<LbTeam>> forUser(String userId) => _delay(
-    LbFixtures.allTeams.where((t) => t.memberIds.contains(userId)).toList(),
-  );
+  Future<LbTeam> byId(String teamId) =>
+      _delay(_teams.values.firstWhere((t) => t.id == teamId));
+
+  @override
+  Future<List<LbTeam>> forUser(String userId) =>
+      _delay(_teams.values.where((t) => t.memberIds.contains(userId)).toList());
 
   @override
   Future<LbTeam> createTeam({
@@ -464,6 +634,50 @@ class MockTeamsRepo implements TeamsRepo {
       Future<void>.delayed(_kWriteLatency);
 
   @override
+  Future<void> inviteByUsername({
+    required String teamId,
+    required String username,
+  }) => Future<void>.delayed(_kWriteLatency);
+
+  @override
+  Future<void> updateTeam({
+    required String teamId,
+    required String name,
+    required String tag,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    final team = _teams[teamId]!;
+    _teams[teamId] = _copyTeam(
+      team,
+      name: name.trim(),
+      tag: tag.trim().toUpperCase(),
+    );
+  }
+
+  @override
+  Future<void> removeMember({
+    required String teamId,
+    required String userId,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    final team = _teams[teamId]!;
+    _teams[teamId] = _copyTeam(
+      team,
+      memberIds: team.memberIds.where((id) => id != userId).toList(),
+    );
+  }
+
+  @override
+  Future<void> transferCaptain({
+    required String teamId,
+    required String userId,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    final team = _teams[teamId]!;
+    _teams[teamId] = _copyTeam(team, captainUserId: userId);
+  }
+
+  @override
   Future<void> acceptInvite(String inviteId) =>
       Future<void>.delayed(_kWriteLatency);
 
@@ -472,14 +686,35 @@ class MockTeamsRepo implements TeamsRepo {
       Future<void>.delayed(_kWriteLatency);
 
   @override
-  Future<void> leaveTeam({required String teamId, required String userId}) =>
-      Future<void>.delayed(_kWriteLatency);
+  Future<void> leaveTeam({
+    required String teamId,
+    required String userId,
+  }) async {
+    await removeMember(teamId: teamId, userId: userId);
+  }
+
+  LbTeam _copyTeam(
+    LbTeam team, {
+    String? name,
+    String? tag,
+    String? captainUserId,
+    List<String>? memberIds,
+  }) => LbTeam(
+    id: team.id,
+    name: name ?? team.name,
+    tag: tag ?? team.tag,
+    logoUrl: team.logoUrl,
+    captainUserId: captainUserId ?? team.captainUserId,
+    memberIds: memberIds ?? team.memberIds,
+    createdAt: team.createdAt,
+  );
 }
 
 class MockPlayersRepo implements PlayersRepo {
   @override
   Future<LbPlayerSearchPage> search({
     String? game,
+    String? username,
     Rank? minRank,
     String? region,
     bool freeAgentsOnly = false,
@@ -487,6 +722,12 @@ class MockPlayersRepo implements PlayersRepo {
     int limit = 20,
   }) async {
     var items = LbFixtures.freeAgents;
+    final usernameTerm = username?.trim().toLowerCase().replaceFirst('@', '');
+    if (usernameTerm != null && usernameTerm.isNotEmpty) {
+      items = items
+          .where((p) => p.user.username.toLowerCase().contains(usernameTerm))
+          .toList();
+    }
     if (freeAgentsOnly) {
       items = items.where((p) => p.isFreeAgent).toList();
     }
@@ -590,10 +831,27 @@ class MockNotificationsRepo implements NotificationsRepo {
 
   @override
   Future<void> respondToTeamInvite({
-    required String notificationId,
+    required String invitationId,
     required bool accept,
   }) async {
-    _items = _items.where((n) => n.id != notificationId).toList();
+    final status = accept ? 'accepted' : 'declined';
+    _items = [
+      for (final n in _items)
+        if (n.payload['invitation_id'] == invitationId)
+          LbNotification(
+            id: n.id,
+            userId: n.userId,
+            kind: n.kind,
+            title: n.title,
+            body: n.body,
+            createdAt: n.createdAt,
+            readAt: LbFixtures.now,
+            deepLink: n.deepLink,
+            payload: {...n.payload, 'invitation_status': status},
+          )
+        else
+          n,
+    ];
     _controller.add(_items);
   }
 }

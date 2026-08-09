@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../domain/ranks.dart';
 import '../domain/tournament_tier.dart';
 import 'models.dart';
@@ -96,11 +98,17 @@ class LbLiveEntry {
     required this.tournament,
     required this.matchReady,
     required this.currentBracketNode,
+    this.currentMatchId,
+    this.matchAction = LbMatchAction.none,
   });
   final LbTournament tournament;
   final bool matchReady;
   final String currentBracketNode;
+  final String? currentMatchId;
+  final LbMatchAction matchAction;
 }
+
+enum LbMatchAction { none, submitResult, verifyResult, awaitingVerification }
 
 class LbUpcomingEntry {
   const LbUpcomingEntry({required this.tournament, required this.locksIn});
@@ -120,16 +128,18 @@ class LbBracket {
     required this.upper,
     required this.lower,
     required this.grandFinal,
+    this.teams = const {},
   });
   final String tournamentId;
   final List<LbMatch> upper;
   final List<LbMatch> lower;
   final LbMatch? grandFinal;
+  final Map<String, LbTeam> teams;
 }
 
 /// Registration + payment.
 abstract class RegistrationRepo {
-  Future<LbRegistration> register({
+  Future<RegistrationCheckout> register({
     required String tournamentId,
     required String userId,
     String? teamId,
@@ -142,26 +152,43 @@ abstract class RegistrationRepo {
 
 /// Result submission (score + screenshot).
 abstract class ResultsRepo {
-  Future<String> requestScreenshotUploadUrl({
+  Future<LbMatch> byId(String matchId);
+
+  Future<String> uploadScreenshot({
+    required String userId,
     required String matchId,
-    required int contentLengthBytes,
+    required Uint8List bytes,
+    required String contentType,
+    required String extension,
   });
 
   Future<void> submit({
     required String matchId,
     required int scoreA,
     required int scoreB,
-    required String screenshotUrl,
+    required String screenshotPath,
   });
 
-  Future<void> openDispute({required String matchId, required String reason});
+  Future<String?> screenshotPreviewUrl(String screenshotPath);
+
+  Future<void> verify({required String matchId});
+
+  Future<void> openDispute({
+    required String matchId,
+    required String reason,
+    required String detail,
+  });
 }
 
 /// Profile: rank badge, achievement badges, W/L stats, tournament history.
 abstract class ProfileRepo {
   Future<LbPlayerProfile> byUsername(String username);
   Future<LbPlayerProfile> byId(String userId);
-  Future<void> updateAvatar(String userId, String assetUri);
+  Future<String> uploadAvatar({
+    required String userId,
+    required Uint8List bytes,
+    required String contentType,
+  });
   Future<void> updateIdentity({
     required String userId,
     required String username,
@@ -179,6 +206,15 @@ abstract class SettingsRepo {
   Future<LbPayoutAccount?> payoutAccount(String userId);
   Future<void> savePayoutAccount(String userId, LbPayoutAccount account);
   Future<void> deletePayoutAccount(String userId);
+  Future<LbAccountDeletionRequest?> accountDeletionRequest(String userId);
+  Future<LbAccountDeletionRequest> requestAccountDeletion();
+  Future<LbAccountDeletionRequest> cancelAccountDeletion();
+}
+
+/// Player-owned financial activity. This is a transaction ledger, not a
+/// stored-value wallet balance.
+abstract class WalletRepo {
+  Future<LbWallet> currentWallet({int limit = 50});
 }
 
 /// Team management — create, invite, roster, leave.
@@ -191,6 +227,20 @@ abstract class TeamsRepo {
     required String captainUserId,
   });
   Future<void> invite({required String teamId, required String userId});
+  Future<void> inviteByUsername({
+    required String teamId,
+    required String username,
+  });
+  Future<void> updateTeam({
+    required String teamId,
+    required String name,
+    required String tag,
+  });
+  Future<void> removeMember({required String teamId, required String userId});
+  Future<void> transferCaptain({
+    required String teamId,
+    required String userId,
+  });
   Future<void> acceptInvite(String inviteId);
   Future<void> declineInvite(String inviteId);
   Future<void> leaveTeam({required String teamId, required String userId});
@@ -200,6 +250,7 @@ abstract class TeamsRepo {
 abstract class PlayersRepo {
   Future<LbPlayerSearchPage> search({
     String? game,
+    String? username,
     Rank? minRank,
     String? region,
     bool freeAgentsOnly = false,
@@ -262,7 +313,7 @@ abstract class NotificationsRepo {
   Future<void> markAllRead(String userId);
   Future<void> markRead(String notificationId);
   Future<void> respondToTeamInvite({
-    required String notificationId,
+    required String invitationId,
     required bool accept,
   });
 }

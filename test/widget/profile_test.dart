@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:labaan/core/data/mock_repos.dart';
 import 'package:labaan/core/data/models.dart';
 import 'package:labaan/core/domain/ranks.dart';
@@ -64,5 +68,32 @@ void main() {
     expect(find.text('@actualplayer'), findsOneWidget);
     expect(find.text('@tonton26'), findsNothing);
     expect(find.text('0%'), findsOneWidget);
+  });
+
+  testWidgets('picks and uploads a supported profile avatar', (tester) async {
+    setPhoneViewport(tester);
+    final repo = MockProfileRepo();
+    final imageBytes = Uint8List.fromList(<int>[137, 80, 78, 71]);
+
+    await tester.pumpWidget(
+      hostRoute(
+        ProfileScreen(
+          pickAvatar: () async => XFile.fromData(
+            imageBytes,
+            mimeType: 'image/png',
+            name: 'avatar.png',
+          ),
+        ),
+        profileRepo: repo,
+      ),
+    );
+    await pumpAndSettleForData(tester);
+
+    await tester.tap(find.byKey(const Key('profile-avatar-picker')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+
+    expect(repo.lastAvatarBytes, imageBytes);
+    expect(repo.lastAvatarContentType, 'image/png');
   });
 }

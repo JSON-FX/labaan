@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'colors.dart';
 
@@ -16,7 +15,8 @@ class LbType {
     double letter = 0,
     Color color = LbColors.textPrimary,
     double? height,
-  }) => GoogleFonts.chakraPetch(
+  }) => TextStyle(
+    fontFamily: 'ChakraPetch',
     fontSize: size,
     fontWeight: weight,
     letterSpacing: letter,
@@ -30,7 +30,8 @@ class LbType {
     double letter = 0,
     Color color = LbColors.textPrimary,
     double? height,
-  }) => GoogleFonts.ibmPlexSans(
+  }) => TextStyle(
+    fontFamily: 'IBMPlexSans',
     fontSize: size,
     fontWeight: weight,
     letterSpacing: letter,
@@ -44,7 +45,8 @@ class LbType {
     double letter = 0.5,
     Color color = LbColors.textMuted,
     double? height,
-  }) => GoogleFonts.ibmPlexMono(
+  }) => TextStyle(
+    fontFamily: 'IBMPlexMono',
     fontSize: size,
     fontWeight: weight,
     letterSpacing: letter,

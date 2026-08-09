@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
 import '../../core/domain/tournament_tier.dart';
+import '../../core/links/tournament_link_service.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/game_art.dart';
@@ -17,10 +19,36 @@ import '../../core/widgets/slant_button.dart';
 ///
 /// Fetches by id via [tournamentByIdProvider]. Every metric/label derives
 /// from the [LbTournament] so it reflects real DB state.
+typedef TournamentShareCallback =
+    Future<void> Function(LbTournament tournament, Rect origin);
+
 class TournamentDetailScreen extends ConsumerWidget {
-  const TournamentDetailScreen({required this.slug, super.key});
+  const TournamentDetailScreen({
+    required this.slug,
+    this.shareTournament,
+    super.key,
+  });
 
   final String slug;
+  final TournamentShareCallback? shareTournament;
+
+  Future<void> _share(LbTournament tournament, Rect origin) async {
+    if (shareTournament != null) {
+      await shareTournament!(tournament, origin);
+      return;
+    }
+    final link = tournamentShareUri(tournament.id);
+    await SharePlus.instance.share(
+      ShareParams(
+        title: tournament.title,
+        subject: 'Join ${tournament.title} on Labaan',
+        text:
+            'Join ${tournament.title} on Labaan. '
+            '${tournament.game} · ${formatPeso(tournament.prizePoolPhp, decimals: 0)} prize pool\n$link',
+        sharePositionOrigin: origin,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,9 +61,31 @@ class TournamentDetailScreen extends ConsumerWidget {
         ),
         title: const Text('Tournament'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.ios_share_rounded, size: 18),
-            onPressed: () {},
+          Builder(
+            builder: (actionContext) => IconButton(
+              key: const Key('share-tournament'),
+              tooltip: 'Share tournament',
+              icon: const Icon(Icons.ios_share_rounded, size: 18),
+              onPressed: async.value == null
+                  ? null
+                  : () async {
+                      final box =
+                          actionContext.findRenderObject() as RenderBox?;
+                      final origin = box == null
+                          ? Rect.zero
+                          : box.localToGlobal(Offset.zero) & box.size;
+                      try {
+                        await _share(async.requireValue, origin);
+                      } catch (_) {
+                        if (!actionContext.mounted) return;
+                        ScaffoldMessenger.of(actionContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Could not open the share sheet.'),
+                          ),
+                        );
+                      }
+                    },
+            ),
           ),
         ],
       ),

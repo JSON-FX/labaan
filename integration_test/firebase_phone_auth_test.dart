@@ -76,14 +76,14 @@ void main() {
     expect(await settings.payoutAccount(user.id), isNull);
 
     final registrations = SupabaseRegistrationRepo(Lb.client);
-    final registration = await registrations.register(
+    final checkout = await registrations.register(
       tournamentId: 'd0000000-0000-0000-0000-000000000004',
       userId: user.id,
       method: PayMethod.gcash,
       captchaToken: 'integration-test',
     );
-    expect(registration.paymentStatus, RegistrationPaymentStatus.paid);
-    expect(registration.paymongoRef, startsWith('paymongo_mock_'));
+    expect(checkout.registration.paymentStatus, RegistrationPaymentStatus.paid);
+    expect(checkout.registration.paymongoRef, startsWith('paymongo_mock_'));
 
     await repo.signOut();
   });

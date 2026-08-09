@@ -203,17 +203,32 @@ class LbRegistration {
 }
 
 @immutable
+class RegistrationCheckout {
+  const RegistrationCheckout({required this.registration, this.checkoutUrl});
+
+  final LbRegistration registration;
+
+  /// Present for real PayMongo Checkout sessions and absent for the
+  /// deterministic development adapter or an already-paid registration.
+  final Uri? checkoutUrl;
+}
+
+@immutable
 class LbMatch {
   const LbMatch({
     required this.id,
     required this.tournamentId,
     required this.round,
+    this.position = 1,
     required this.bracketSide,
     required this.teamAId,
     required this.teamBId,
     this.winnerId,
     this.scoreA = 0,
     this.scoreB = 0,
+    this.status = LbMatchStatus.pending,
+    this.submittedByUserId,
+    this.submittedTeamId,
     this.verifiedByModeratorId,
     this.screenshotUrl,
     this.verifiedAt,
@@ -222,12 +237,16 @@ class LbMatch {
   final String id;
   final String tournamentId;
   final int round;
+  final int position;
   final BracketSide bracketSide;
   final String teamAId;
   final String teamBId;
   final String? winnerId;
   final int scoreA;
   final int scoreB;
+  final LbMatchStatus status;
+  final String? submittedByUserId;
+  final String? submittedTeamId;
   final String? verifiedByModeratorId;
   final String? screenshotUrl;
   final DateTime? verifiedAt;
@@ -237,6 +256,15 @@ class LbMatch {
 }
 
 enum BracketSide { upper, lower, grandFinal }
+
+enum LbMatchStatus {
+  pending,
+  ready,
+  awaitingResult,
+  awaitingVerification,
+  disputed,
+  completed,
+}
 
 enum PayMethod { gcash, maya, card }
 
@@ -375,6 +403,89 @@ class LbPayoutAccount {
   String get maskedNumber => mobileNumber.length < 4
       ? mobileNumber
       : '••${mobileNumber.substring(mobileNumber.length - 4)}';
+}
+
+enum LbAccountDeletionStatus {
+  pending,
+  underReview,
+  processing,
+  cancelled,
+  completed,
+}
+
+@immutable
+class LbAccountDeletionRequest {
+  const LbAccountDeletionRequest({
+    required this.id,
+    required this.userId,
+    required this.status,
+    required this.requestedAt,
+    required this.scheduledFor,
+    this.cancelledAt,
+    this.completedAt,
+    this.retentionUntil,
+    this.reviewReason,
+  });
+
+  final String id;
+  final String userId;
+  final LbAccountDeletionStatus status;
+  final DateTime requestedAt;
+  final DateTime scheduledFor;
+  final DateTime? cancelledAt;
+  final DateTime? completedAt;
+  final DateTime? retentionUntil;
+  final String? reviewReason;
+
+  bool get canCancel =>
+      status == LbAccountDeletionStatus.pending ||
+      status == LbAccountDeletionStatus.underReview;
+}
+
+enum LbWalletTransactionKind { entryFee, prize, refund }
+
+@immutable
+class LbWalletTransaction {
+  const LbWalletTransaction({
+    required this.id,
+    required this.kind,
+    required this.tournamentId,
+    required this.tournamentTitle,
+    required this.amountCentavos,
+    required this.method,
+    required this.status,
+    required this.occurredAt,
+  });
+
+  final String id;
+  final LbWalletTransactionKind kind;
+  final String tournamentId;
+  final String tournamentTitle;
+
+  /// Signed cash movement. Entry fees are negative; prizes/refunds positive.
+  final int amountCentavos;
+  final String method;
+  final String status;
+  final DateTime occurredAt;
+
+  bool get isIncoming => amountCentavos > 0;
+}
+
+@immutable
+class LbWallet {
+  const LbWallet({
+    required this.totalPrizeCentavos,
+    required this.totalEntryFeeCentavos,
+    required this.netCashFlowCentavos,
+    required this.pendingPrizeCentavos,
+    required this.transactions,
+  });
+
+  final int totalPrizeCentavos;
+  final int totalEntryFeeCentavos;
+  final int netCashFlowCentavos;
+  final int pendingPrizeCentavos;
+  final List<LbWalletTransaction> transactions;
 }
 
 @immutable

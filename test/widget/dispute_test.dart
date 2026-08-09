@@ -8,7 +8,7 @@ void main() {
   testWidgets('lists all 6 reasons and shows the 15m SLA pill', (tester) async {
     setPhoneViewport(tester);
     await tester.pumpWidget(hostRoute(const DisputeScreen(matchId: 'm_u3')));
-    await tester.pump();
+    await pumpAndSettleForData(tester);
 
     expect(find.text('Score is wrong'), findsOneWidget);
     expect(find.text('Opponent no-show'), findsOneWidget);
@@ -18,6 +18,8 @@ void main() {
     expect(find.text('Other'), findsOneWidget);
 
     expect(find.text('15M SLA'), findsOneWidget);
+    expect(find.textContaining('Team MNL'), findsOneWidget);
+    expect(find.textContaining('Davao GG'), findsOneWidget);
   });
 
   testWidgets('Open dispute stays disabled without both reason and detail', (
@@ -25,7 +27,7 @@ void main() {
   ) async {
     setPhoneViewport(tester);
     await tester.pumpWidget(hostRoute(const DisputeScreen(matchId: 'm_u3')));
-    await tester.pump();
+    await pumpAndSettleForData(tester);
 
     // Neither reason nor detail — tapping the CTA is a no-op; screen stays
     // on the dispute form (no dialog appears).

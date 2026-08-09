@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +29,9 @@ class BrowseScreen extends ConsumerStatefulWidget {
 
 class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   String _game = 'All games';
+  String _search = '';
+  late final TextEditingController _searchController;
+  Timer? _searchDebounce;
 
   static const _games = [
     'All games',
@@ -38,8 +43,44 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _scheduleSearch(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () => _commitSearch(value),
+    );
+  }
+
+  void _commitSearch(String value) {
+    _searchDebounce?.cancel();
+    final normalized = value.trim();
+    if (normalized == _search || !mounted) return;
+    setState(() => _search = normalized);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _commitSearch('');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final query = BrowseQuery(game: _game == 'All games' ? null : _game);
+    final query = BrowseQuery(
+      game: _game == 'All games' ? null : _game,
+      search: _search.isEmpty ? null : _search,
+    );
     final async = ref.watch(browsePageProvider(query));
     return Scaffold(
       appBar: AppBar(
@@ -61,7 +102,12 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
           children: [
-            const _SearchBar(),
+            _SearchBar(
+              controller: _searchController,
+              onChanged: _scheduleSearch,
+              onSubmitted: _commitSearch,
+              onClear: _clearSearch,
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 30,
@@ -117,7 +163,9 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 onRetry: () => ref.invalidate(browsePageProvider(query)),
               ),
               data: (page) {
-                if (page.items.isEmpty) return const _EmptyState();
+                if (page.items.isEmpty) {
+                  return _EmptyState(searchQuery: _search);
+                }
                 return Column(
                   children: [
                     for (final t in page.items) ...[
@@ -139,29 +187,61 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 }
 
 class _SearchBar extends StatelessWidget {
-  const _SearchBar();
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+    required this.onSubmitted,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: LbColors.surface,
-        border: Border.all(color: LbColors.border),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search, size: 18, color: LbColors.textDim),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Search tournaments or organizers',
-              style: LbType.bodySm.copyWith(color: LbColors.textDim),
-            ),
+      child: TextField(
+        key: const Key('browse-search'),
+        controller: controller,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        textInputAction: TextInputAction.search,
+        style: LbType.bodySm.copyWith(color: LbColors.textPrimary),
+        cursorColor: LbColors.lime,
+        decoration: InputDecoration(
+          hintText: 'Search tournaments',
+          hintStyle: LbType.bodySm.copyWith(color: LbColors.textDim),
+          prefixIcon: const Icon(
+            Icons.search,
+            size: 18,
+            color: LbColors.textDim,
           ),
-        ],
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (_, value, _) => value.text.isEmpty
+                ? const SizedBox.shrink()
+                : IconButton(
+                    key: const Key('clear-browse-search'),
+                    tooltip: 'Clear search',
+                    onPressed: onClear,
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                  ),
+          ),
+          filled: true,
+          fillColor: LbColors.surface,
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: LbColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: LbColors.lime),
+          ),
+        ),
       ),
     );
   }
@@ -201,11 +281,15 @@ class _TournamentBrowseRow extends StatelessWidget {
                       tone: tournament.tier.chipTone,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      '${tournament.registeredTeams} / ${tournament.maxTeams} SLOTS',
-                      style: LbType.metaSm.copyWith(
-                        color: LbColors.textDim,
-                        fontSize: 9,
+                    Expanded(
+                      child: Text(
+                        '${tournament.registeredTeams} / ${tournament.maxTeams} SLOTS',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LbType.metaSm.copyWith(
+                          color: LbColors.textDim,
+                          fontSize: 9,
+                        ),
                       ),
                     ),
                   ],
@@ -260,7 +344,9 @@ class _Skeleton extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.searchQuery});
+
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +371,9 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Try another game or clear the filter.',
+            searchQuery.isEmpty
+                ? 'Try another game or clear the filter.'
+                : 'No open tournaments match “$searchQuery”.',
             textAlign: TextAlign.center,
             style: LbType.bodySm.copyWith(color: LbColors.textDim),
           ),

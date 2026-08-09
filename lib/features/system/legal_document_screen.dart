@@ -46,7 +46,7 @@ We use this information to operate tournaments, prevent fraud, calculate ranking
 
 Sensitive account and payout settings are restricted to your authenticated account through database access policies. We do not sell personal information. Service providers such as Firebase, Supabase, and payment partners process data only to provide their contracted services.
 
-You may update your profile and communication preferences in Settings. Account-deletion requests require support review while payment, fraud-prevention, and regulatory retention obligations are checked.
+You may update your profile and communication preferences in Settings. Account deletion has a 30-day cancellation period. After processing, Firebase sign-in and direct profile and payout identifiers are erased. Payment, payout, tournament, dispute, and audit records may remain pseudonymized for up to five years where needed for financial integrity, legal claims, and compliance. Team ownership and unsettled payouts are reviewed before cleanup.
 
 This draft must be reviewed by Philippine privacy counsel before production release.''';
 

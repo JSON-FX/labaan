@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:labaan/core/data/fixtures.dart';
 import 'package:labaan/features/tournament/tournament_detail_screen.dart';
@@ -15,5 +16,25 @@ void main() {
 
     expect(find.text(tournament.organizerId), findsNothing);
     expect(find.text('Tournament organizer'), findsOneWidget);
+  });
+
+  testWidgets('shares the loaded tournament from the app bar', (tester) async {
+    setPhoneViewport(tester);
+    final tournament = LbFixtures.caviteOpen;
+    String? sharedId;
+    await tester.pumpWidget(
+      hostRoute(
+        TournamentDetailScreen(
+          slug: tournament.id,
+          shareTournament: (value, _) async => sharedId = value.id,
+        ),
+      ),
+    );
+    await pumpAndSettleForData(tester);
+
+    await tester.tap(find.byKey(const Key('share-tournament')));
+    await tester.pump();
+
+    expect(sharedId, tournament.id);
   });
 }

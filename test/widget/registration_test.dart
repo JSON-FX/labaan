@@ -29,13 +29,13 @@ void main() {
     final repo = MockRegistrationRepo();
 
     Future<RegistrationPaymentStatus> status(PayMethod method) async {
-      final registration = await repo.register(
+      final checkout = await repo.register(
         tournamentId: LbFixtures.caviteOpen.id,
         userId: LbFixtures.me.id,
         method: method,
         captchaToken: 'test',
       );
-      return registration.paymentStatus;
+      return checkout.registration.paymentStatus;
     }
 
     expect(await status(PayMethod.gcash), RegistrationPaymentStatus.paid);

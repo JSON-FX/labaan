@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/data/providers.dart';
 import '../../core/theme/colors.dart';
@@ -18,7 +19,7 @@ import '../../core/widgets/team_avatar.dart';
 /// client-to-storage upload — API server never handles file bytes") then
 /// posts the score. 30m SLA counts down against the moderator queue.
 class ResultSubmissionScreen extends ConsumerStatefulWidget {
-  const ResultSubmissionScreen({this.matchId = 'm_u3', super.key});
+  const ResultSubmissionScreen({required this.matchId, super.key});
 
   final String matchId;
 
@@ -29,31 +30,74 @@ class ResultSubmissionScreen extends ConsumerStatefulWidget {
 
 class _ResultSubmissionScreenState
     extends ConsumerState<ResultSubmissionScreen> {
-  int _mnl = 2;
-  int _dvo = 1;
+  int _scoreA = 2;
+  int _scoreB = 1;
   bool _confirmed = false;
-  String? _screenshotUrl;
+  String? _screenshotPath;
+  bool _uploading = false;
   bool _submitting = false;
 
   Future<void> _pickAndUpload() async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null) return;
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    final bytes = await image.readAsBytes();
+    if (bytes.length > 5 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Screenshot must be 5 MB or smaller.')),
+      );
+      return;
+    }
+
+    final rawExtension = image.name.split('.').last.toLowerCase();
+    final extension = rawExtension == 'jpeg' ? 'jpg' : rawExtension;
+    final contentType =
+        image.mimeType ??
+        switch (extension) {
+          'jpg' => 'image/jpeg',
+          'png' => 'image/png',
+          'webp' => 'image/webp',
+          _ => '',
+        };
+    if (!const {
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    }.contains(contentType)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose a JPG, PNG, or WebP screenshot.')),
+      );
+      return;
+    }
+
     final repo = ref.read(resultsRepoProvider);
+    setState(() => _uploading = true);
     try {
-      final url = await repo.requestScreenshotUploadUrl(
+      final path = await repo.uploadScreenshot(
+        userId: user.id,
         matchId: widget.matchId,
-        contentLengthBytes: 800 * 1024,
+        bytes: bytes,
+        contentType: contentType,
+        extension: extension,
       );
       if (!mounted) return;
-      setState(() => _screenshotUrl = url);
+      setState(() => _screenshotPath = path);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload URL request failed.')),
+        const SnackBar(content: Text('Screenshot upload failed.')),
       );
+    } finally {
+      if (mounted) setState(() => _uploading = false);
     }
   }
 
   Future<void> _submit() async {
-    if (_screenshotUrl == null) {
+    if (_screenshotPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Attach a proof screenshot first.')),
       );
@@ -65,12 +109,17 @@ class _ResultSubmissionScreenState
           .read(resultsRepoProvider)
           .submit(
             matchId: widget.matchId,
-            scoreA: _mnl,
-            scoreB: _dvo,
-            screenshotUrl: _screenshotUrl!,
+            scoreA: _scoreA,
+            scoreB: _scoreB,
+            screenshotPath: _screenshotPath!,
           );
       if (!mounted) return;
-      context.go('/rank-up');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Result sent for moderator verification.'),
+        ),
+      );
+      context.go('/compete');
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -83,8 +132,9 @@ class _ResultSubmissionScreenState
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit =
-        _confirmed && _mnl != _dvo && _screenshotUrl != null && !_submitting;
+    final submission = ref.watch(
+      matchSubmissionContextProvider(widget.matchId),
+    );
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -99,98 +149,127 @@ class _ResultSubmissionScreenState
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 4, 18, 120),
-              children: [
-                _MatchContextCard(),
-                const SizedBox(height: 14),
-                const SectionLabel('Final score'),
-                const SizedBox(height: 8),
-                Row(
+      body: submission.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => Center(
+          child: GhostButton(
+            label: 'Retry',
+            onPressed: () =>
+                ref.invalidate(matchSubmissionContextProvider(widget.matchId)),
+          ),
+        ),
+        data: (value) {
+          final canSubmit =
+              _confirmed &&
+              _scoreA != _scoreB &&
+              _screenshotPath != null &&
+              !_uploading &&
+              !_submitting;
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(18, 4, 18, 120),
                   children: [
-                    Expanded(
-                      child: _ScoreStepper(
-                        team: 'TEAM MNL',
-                        value: _mnl,
-                        highlighted: _mnl > _dvo,
-                        onDecrement: () =>
-                            setState(() => _mnl = (_mnl - 1).clamp(0, 9)),
-                        onIncrement: () =>
-                            setState(() => _mnl = (_mnl + 1).clamp(0, 9)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ScoreStepper(
-                        team: 'DAVAO GG',
-                        value: _dvo,
-                        highlighted: _dvo > _mnl,
-                        onDecrement: () =>
-                            setState(() => _dvo = (_dvo - 1).clamp(0, 9)),
-                        onIncrement: () =>
-                            setState(() => _dvo = (_dvo + 1).clamp(0, 9)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: RichText(
-                    text: TextSpan(
-                      style: LbType.metaSm.copyWith(
-                        color: LbColors.textMuted,
-                        fontSize: 10,
-                      ),
+                    _MatchContextCard(submission: value),
+                    const SizedBox(height: 14),
+                    const SectionLabel('Final score'),
+                    const SizedBox(height: 8),
+                    Row(
                       children: [
-                        const TextSpan(text: 'WINNER · '),
-                        TextSpan(
-                          text: _mnl == _dvo
-                              ? 'TIE'
-                              : (_mnl > _dvo ? 'TEAM MNL' : 'DAVAO GG'),
-                          style: LbType.metaSm.copyWith(
-                            color: LbColors.lime,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 10,
+                        Expanded(
+                          child: _ScoreStepper(
+                            team: value.teamA.name.toUpperCase(),
+                            value: _scoreA,
+                            highlighted: _scoreA > _scoreB,
+                            onDecrement: () => setState(
+                              () => _scoreA = (_scoreA - 1).clamp(0, 9),
+                            ),
+                            onIncrement: () => setState(
+                              () => _scoreA = (_scoreA + 1).clamp(0, 9),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _ScoreStepper(
+                            team: value.teamB.name.toUpperCase(),
+                            value: _scoreB,
+                            highlighted: _scoreB > _scoreA,
+                            onDecrement: () => setState(
+                              () => _scoreB = (_scoreB - 1).clamp(0, 9),
+                            ),
+                            onIncrement: () => setState(
+                              () => _scoreB = (_scoreB + 1).clamp(0, 9),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: RichText(
+                        text: TextSpan(
+                          style: LbType.metaSm.copyWith(
+                            color: LbColors.textMuted,
+                            fontSize: 10,
+                          ),
+                          children: [
+                            const TextSpan(text: 'WINNER · '),
+                            TextSpan(
+                              text: _scoreA == _scoreB
+                                  ? 'TIE'
+                                  : (_scoreA > _scoreB
+                                        ? value.teamA.name.toUpperCase()
+                                        : value.teamB.name.toUpperCase()),
+                              style: LbType.metaSm.copyWith(
+                                color: LbColors.lime,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const SectionLabel('Proof screenshot'),
+                    const SizedBox(height: 8),
+                    _ProofDropzone(
+                      uploaded: _screenshotPath != null,
+                      uploading: _uploading,
+                      onTap: _uploading ? null : _pickAndUpload,
+                    ),
+                    const SizedBox(height: 14),
+                    _ConfirmRow(
+                      value: _confirmed,
+                      onChanged: (v) => setState(() => _confirmed = v),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
-                const SectionLabel('Proof screenshot'),
-                const SizedBox(height: 8),
-                _ProofDropzone(
-                  uploaded: _screenshotUrl != null,
-                  onTap: _pickAndUpload,
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _SubmitCta(
+                  busy: _submitting,
+                  onPressed: canSubmit ? _submit : null,
                 ),
-                const SizedBox(height: 14),
-                _ConfirmRow(
-                  value: _confirmed,
-                  onChanged: (v) => setState(() => _confirmed = v),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _SubmitCta(
-              busy: _submitting,
-              onPressed: canSubmit ? _submit : null,
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
 class _MatchContextCard extends StatelessWidget {
+  const _MatchContextCard({required this.submission});
+
+  final LbMatchSubmissionContext submission;
+
   @override
   Widget build(BuildContext context) {
     return LbCard(
@@ -199,7 +278,7 @@ class _MatchContextCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'QUARTERFINAL · BEST OF 3',
+            'ROUND ${submission.match.round} · MATCH RESULT',
             style: LbType.metaSm.copyWith(
               color: LbColors.textDim,
               fontSize: 9.5,
@@ -209,14 +288,14 @@ class _MatchContextCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Row(
                   children: [
-                    TeamAvatar(code: 'MNL'),
-                    SizedBox(width: 8),
+                    TeamAvatar(code: submission.teamA.tag),
+                    const SizedBox(width: 8),
                     Text(
-                      'Team MNL',
-                      style: TextStyle(
+                      submission.teamA.name,
+                      style: const TextStyle(
                         color: LbColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
@@ -232,19 +311,19 @@ class _MatchContextCard extends StatelessWidget {
                   fontSize: 10,
                 ),
               ),
-              const Expanded(
+              Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      'Davao GG',
-                      style: TextStyle(
+                      submission.teamB.name,
+                      style: const TextStyle(
                         color: LbColors.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    TeamAvatar(code: 'DVO'),
+                    const SizedBox(width: 8),
+                    TeamAvatar(code: submission.teamB.tag),
                   ],
                 ),
               ),
@@ -344,9 +423,15 @@ class _StepButton extends StatelessWidget {
 }
 
 class _ProofDropzone extends StatelessWidget {
-  const _ProofDropzone({required this.uploaded, required this.onTap});
+  const _ProofDropzone({
+    required this.uploaded,
+    required this.uploading,
+    required this.onTap,
+  });
+
   final bool uploaded;
-  final VoidCallback onTap;
+  final bool uploading;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -379,22 +464,34 @@ class _ProofDropzone extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  uploaded ? Icons.check_rounded : Icons.arrow_upward_rounded,
-                  color: LbColors.lime,
-                  size: 18,
-                ),
+                child: uploading
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          color: LbColors.lime,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Icon(
+                        uploaded
+                            ? Icons.check_rounded
+                            : Icons.arrow_upward_rounded,
+                        color: LbColors.lime,
+                        size: 18,
+                      ),
               ),
               const SizedBox(height: 6),
               Text(
-                uploaded
+                uploading
+                    ? 'UPLOADING PROOF…'
+                    : uploaded
                     ? 'PROOF ATTACHED · TAP TO REPLACE'
-                    : 'DRAG OR TAP · MATCH RESULT SCREENSHOT',
+                    : 'TAP TO CHOOSE · MATCH RESULT SCREENSHOT',
                 style: LbType.cardTitleSm.copyWith(fontSize: 12),
               ),
               const SizedBox(height: 3),
               Text(
-                'Direct upload · pre-signed URL · max 8 MB',
+                'JPG, PNG, or WebP · max 5 MB',
                 style: LbType.metaSm.copyWith(
                   color: LbColors.textDim,
                   fontSize: 9.5,

@@ -69,6 +69,18 @@ There is no phone-auth bypass. **Continue with phone** always opens the OTP
 screen and uses Firebase's real verification flow. Use Firebase test phone
 numbers during development to avoid sending SMS.
 
+Firebase Messaging registers each signed-in app installation with Supabase,
+refreshes rotated tokens, unregisters before sign-out, shows foreground
+updates, and opens allow-listed in-app routes from notification taps. The APNs
+authentication key is uploaded in Firebase Console. The hosted backend already
+has its Firebase service-account secrets and runs the trusted `push-deliver`
+worker every minute. The development APNs slot uses the sandbox credential, and
+physical-device smoke tests were accepted by FCM and marked `sent`. Foreground
+presentation, background delivery, and tap routing to `/notifications` are
+verified on the release-mode Dev build. Use release/profile mode when testing
+cold notification launches on a physical iPhone; a detached debug build can
+appear frozen when iOS relaunches it without Flutter tooling.
+
 To run the app against the seeded local backend on an iOS simulator:
 
 ```bash
@@ -157,8 +169,34 @@ into the app's UI models.
 
 Table reads, Realtime, profile updates, team creation, Firebase
 authentication, registration reservation, and the development PayMongo mock
-are connected. Result and dispute Edge Functions remain
-`501 not_implemented`. Team invitations also have no backend command yet.
+are connected. Captain-issued team invitations now persist through the
+authenticated `team-invite` command and create one recipient notification.
+Invitees can accept or decline inline; acceptance adds roster membership
+atomically, and both outcomes persist their resolved notification state.
+Captains can edit team identity, remove members, or transfer captaincy;
+members can leave outside locked/live tournaments through the authenticated
+`team-manage` command.
+Players can also schedule permanent account deletion from Settings. A
+30-day cancellation window precedes service-authenticated Firebase identity
+removal and PII pseudonymization; captain/payout conflicts pause for review,
+while retained financial and tournament records expire under the documented
+five-year policy.
+The Profile header includes a gallery avatar picker backed by the public
+Supabase `avatars` bucket. Uploads are limited to JPEG, PNG, or WebP at 2 MiB,
+and Storage policies restrict replacement to the signed-in player's object.
+Tournament detail pages share `labaan://tournament/<id>` through the native
+share sheet. iOS and Android register the `labaan` custom scheme, and the app
+normalizes valid cold-start or foreground links into `/tournament/<id>` while
+rejecting malformed, unrelated, or query-injected URLs.
+Browse title search is debounced and runs against the hosted tournament query,
+composing with game filters and cursor ordering. A trigram GIN index backs the
+case-insensitive substring match instead of filtering only the visible page.
+The Home Host and Support actions now open dedicated player-app destinations.
+Host explains the separate organizer-app boundary, links to the official GAB
+registry, and carries organizer context into Support. Support connects players
+to existing account, payout, notification, competition, privacy, and terms
+flows; direct support cases and organizer provisioning remain future web-app
+work.
 
 ## Key spec facts baked in
 
@@ -192,7 +230,15 @@ flutter test                            # everything
 flutter test test/unit                  # domain math only
 flutter test test/widget                # per-screen
 flutter test test/widget/home_feed_test.dart   # one file
+flutter test --coverage
+dart run tool/check_coverage.dart       # requires at least 59% line coverage
 ```
+
+Chakra Petch, IBM Plex Sans, and IBM Plex Mono are bundled under
+`assets/fonts/`, so widget rendering is offline and deterministic. The Host and
+Support destinations have visually reviewed baselines in `test/goldens/`;
+refresh them intentionally with
+`flutter test test/widget/golden_screens_test.dart --update-goldens`.
 
 The real Firebase phone → Supabase profile bridge also has an opt-in simulator
 test. Use a Firebase fictional phone number and code; never commit them:
@@ -207,18 +253,13 @@ flutter test integration_test/firebase_phone_auth_test.dart \
 
 ### Not yet covered
 
-- **Golden tests** — need Chakra Petch / IBM Plex bundled locally instead of
-  fetched by `google_fonts` at runtime. Kept out of `test/` until that's
-  wired.
 - **Integration tests** against a real Supabase dev DB.
-- **Coverage baseline** — CI uploads `coverage/lcov.info` but there's no
-  threshold yet.
 
 ## CI
 
 GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs
-`dart format --set-exit-if-changed`, `flutter analyze`, and `flutter test
---coverage` on every push and PR to `main`.
+formatting, analysis, `flutter test --coverage`, and the 59% coverage gate on
+every push and PR to `main`.
 
 ## Legal / regulatory
 

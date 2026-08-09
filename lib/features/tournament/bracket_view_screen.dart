@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/fixtures.dart';
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
 import '../../core/theme/colors.dart';
@@ -62,18 +61,24 @@ class BracketViewScreen extends ConsumerWidget {
             if (bracket.upper.isEmpty)
               _EmptyRail(hint: 'No upper-bracket matches yet.')
             else
-              for (final m in bracket.upper) _MatchRow(match: m),
+              for (final m in bracket.upper)
+                _MatchRow(match: m, teams: bracket.teams),
             const SizedBox(height: 20),
             const SectionLabel('Lower bracket'),
             const SizedBox(height: 8),
             if (bracket.lower.isEmpty)
               _EmptyRail(hint: 'Nothing in the lower bracket yet.')
             else
-              for (final m in bracket.lower) _MatchRow(match: m),
+              for (final m in bracket.lower)
+                _MatchRow(match: m, teams: bracket.teams),
             const SizedBox(height: 20),
             const SectionLabel('Grand final'),
             const SizedBox(height: 8),
-            _MatchRow(match: bracket.grandFinal, pendingIfNull: true),
+            _MatchRow(
+              match: bracket.grandFinal,
+              teams: bracket.teams,
+              pendingIfNull: true,
+            ),
           ],
         ),
       ),
@@ -82,8 +87,13 @@ class BracketViewScreen extends ConsumerWidget {
 }
 
 class _MatchRow extends StatelessWidget {
-  const _MatchRow({this.match, this.pendingIfNull = false});
+  const _MatchRow({
+    this.match,
+    this.teams = const {},
+    this.pendingIfNull = false,
+  });
   final LbMatch? match;
+  final Map<String, LbTeam> teams;
   final bool pendingIfNull;
 
   @override
@@ -113,11 +123,19 @@ class _MatchRow extends StatelessWidget {
       );
     }
     final m = match!;
-    final live = !m.isPending && !m.isVerified;
+    final active =
+        m.status == LbMatchStatus.ready ||
+        m.status == LbMatchStatus.awaitingResult ||
+        m.status == LbMatchStatus.awaitingVerification ||
+        m.status == LbMatchStatus.disputed;
+    final scoreVisible =
+        m.status == LbMatchStatus.awaitingVerification ||
+        m.status == LbMatchStatus.disputed ||
+        m.status == LbMatchStatus.completed;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: LbCard(
-        highlighted: live,
+        highlighted: active,
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
@@ -126,7 +144,7 @@ class _MatchRow extends StatelessWidget {
                 code: _teamCode(m.teamAId),
                 score: m.scoreA,
                 winner: m.isVerified && m.winnerId == m.teamAId,
-                pending: m.isPending,
+                pending: !scoreVisible,
               ),
             ),
             const SizedBox(width: 10),
@@ -144,7 +162,7 @@ class _MatchRow extends StatelessWidget {
                 code: _teamCode(m.teamBId),
                 score: m.scoreB,
                 winner: m.isVerified && m.winnerId == m.teamBId,
-                pending: m.isPending,
+                pending: !scoreVisible,
                 reverse: true,
               ),
             ),
@@ -155,10 +173,8 @@ class _MatchRow extends StatelessWidget {
   }
 
   String _teamCode(String id) {
-    if (id == LbFixtures.teamMnl.id) return LbFixtures.teamMnl.tag;
-    if (id == LbFixtures.teamCebuKings.id) return LbFixtures.teamCebuKings.tag;
-    if (id == LbFixtures.teamDavaoGg.id) return LbFixtures.teamDavaoGg.tag;
-    return id.substring(id.length - 3).toUpperCase();
+    if (id.isEmpty) return 'TBD';
+    return teams[id]?.tag ?? 'TBD';
   }
 }
 

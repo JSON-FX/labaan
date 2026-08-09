@@ -82,7 +82,7 @@ class _HomeBody extends StatelessWidget {
         if (data.liveMatchReady != null) ...[
           _HeroLiveCard(
             tournament: data.liveMatchReady!,
-            onTap: () => context.push('/submit-result'),
+            onTap: () => context.go('/compete'),
             onBracket: () =>
                 context.push('/bracket/${data.liveMatchReady!.id}'),
           ),
@@ -436,11 +436,9 @@ class _QuickActions extends StatelessWidget {
           if (i > 0) const SizedBox(width: 8),
           Expanded(
             child: LbCard(
+              key: Key('quick-action-${_actions[i].$2.toLowerCase()}'),
               padding: const EdgeInsets.symmetric(vertical: 12),
-              onTap: () {
-                final path = _actions[i].$3;
-                if (path == '/team') context.push('/team');
-              },
+              onTap: () => context.push(_actions[i].$3),
               child: Column(
                 children: [
                   Icon(_actions[i].$1, color: LbColors.lime, size: 22),

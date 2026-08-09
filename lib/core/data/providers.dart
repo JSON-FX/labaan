@@ -70,6 +70,12 @@ final settingsRepoProvider = Provider<SettingsRepo>(
       : MockSettingsRepo(),
 );
 
+final walletRepoProvider = Provider<WalletRepo>(
+  (ref) => ref.watch(backendEnabledProvider)
+      ? SupabaseWalletRepo(Lb.client)
+      : MockWalletRepo(),
+);
+
 final teamsRepoProvider = Provider<TeamsRepo>(
   (ref) => ref.watch(backendEnabledProvider)
       ? SupabaseTeamsRepo(Lb.client)
@@ -140,6 +146,40 @@ final bracketProvider = StreamProvider.autoDispose.family<LbBracket, String>((
   return ref.watch(bracketRepoProvider).watch(tournamentId);
 });
 
+class LbMatchSubmissionContext {
+  const LbMatchSubmissionContext({
+    required this.match,
+    required this.teamA,
+    required this.teamB,
+  });
+
+  final LbMatch match;
+  final LbTeam teamA;
+  final LbTeam teamB;
+}
+
+final matchSubmissionContextProvider = FutureProvider.autoDispose
+    .family<LbMatchSubmissionContext, String>((ref, matchId) async {
+      final match = await ref.watch(resultsRepoProvider).byId(matchId);
+      final teams = ref.watch(teamsRepoProvider);
+      final values = await Future.wait([
+        teams.byId(match.teamAId),
+        teams.byId(match.teamBId),
+      ]);
+      return LbMatchSubmissionContext(
+        match: match,
+        teamA: values[0],
+        teamB: values[1],
+      );
+    });
+
+final matchEvidenceUrlProvider = FutureProvider.autoDispose
+    .family<String?, String>((ref, screenshotPath) {
+      return ref
+          .watch(resultsRepoProvider)
+          .screenshotPreviewUrl(screenshotPath);
+    });
+
 final browsePageProvider = FutureProvider.autoDispose
     .family<LbTournamentPage, BrowseQuery>((ref, query) {
       return ref
@@ -183,6 +223,17 @@ final payoutAccountProvider = FutureProvider.autoDispose
       return ref.watch(settingsRepoProvider).payoutAccount(userId);
     });
 
+final accountDeletionRequestProvider = FutureProvider.autoDispose
+    .family<LbAccountDeletionRequest?, String>((ref, userId) {
+      return ref.watch(settingsRepoProvider).accountDeletionRequest(userId);
+    });
+
+final walletProvider = FutureProvider.autoDispose<LbWallet>((ref) async {
+  final user = await ref.watch(currentUserProvider.future);
+  if (user == null) throw StateError('Authentication required');
+  return ref.watch(walletRepoProvider).currentWallet();
+});
+
 final teamByIdProvider = FutureProvider.autoDispose.family<LbTeam, String>((
   ref,
   id,
@@ -208,6 +259,7 @@ final playerSearchProvider = FutureProvider.autoDispose
           .watch(playersRepoProvider)
           .search(
             game: query.game,
+            username: query.username,
             minRank: query.minRank,
             freeAgentsOnly: query.freeAgentsOnly,
           );
@@ -216,10 +268,12 @@ final playerSearchProvider = FutureProvider.autoDispose
 class PlayerSearchQuery {
   const PlayerSearchQuery({
     this.game,
+    this.username,
     this.minRank,
     this.freeAgentsOnly = false,
   });
   final String? game;
+  final String? username;
   final Rank? minRank;
   final bool freeAgentsOnly;
 
@@ -227,11 +281,12 @@ class PlayerSearchQuery {
   bool operator ==(Object other) =>
       other is PlayerSearchQuery &&
       other.game == game &&
+      other.username == username &&
       other.minRank == minRank &&
       other.freeAgentsOnly == freeAgentsOnly;
 
   @override
-  int get hashCode => Object.hash(game, minRank, freeAgentsOnly);
+  int get hashCode => Object.hash(game, username, minRank, freeAgentsOnly);
 }
 
 final topPlayersProvider = FutureProvider.autoDispose

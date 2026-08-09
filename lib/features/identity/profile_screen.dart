@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
@@ -20,11 +21,81 @@ import '../../core/widgets/team_avatar.dart';
 ///
 /// Consumes [profileByIdProvider(currentUserId)]. All stats, badges, and
 /// tournament history derive from the [LbPlayerProfile] composed view.
-class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends ConsumerStatefulWidget {
+  const ProfileScreen({super.key, this.pickAvatar});
+
+  final Future<XFile?> Function()? pickAvatar;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _uploadingAvatar = false;
+
+  Future<void> _pickAndUploadAvatar(LbUser user) async {
+    if (_uploadingAvatar) return;
+    final image =
+        await (widget.pickAvatar?.call() ??
+            ImagePicker().pickImage(
+              source: ImageSource.gallery,
+              maxWidth: 1024,
+              maxHeight: 1024,
+              imageQuality: 88,
+            ));
+    if (image == null || !mounted) return;
+
+    final extension = image.path.split('.').last.toLowerCase();
+    var contentType = image.mimeType?.toLowerCase();
+    contentType ??= switch (extension) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => null,
+    };
+    const supported = {'image/jpeg', 'image/png', 'image/webp'};
+    if (!supported.contains(contentType)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choose a JPG, PNG, or WebP image.')),
+      );
+      return;
+    }
+
+    final bytes = await image.readAsBytes();
+    if (bytes.length > 2 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Avatar must be 2 MB or smaller.')),
+      );
+      return;
+    }
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      await ref
+          .read(profileRepoProvider)
+          .uploadAvatar(
+            userId: user.id,
+            bytes: bytes,
+            contentType: contentType!,
+          );
+      ref.invalidate(profileByIdProvider(user.id));
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile photo updated.')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not upload your profile photo.')),
+      );
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider).value;
     if (user == null) {
       return Scaffold(
@@ -53,7 +124,14 @@ class ProfileScreen extends ConsumerWidget {
         data: (p) => ListView(
           padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
           children: [
-            _IdentityBlock(profile: p),
+            _IdentityBlock(
+              profile: p,
+              avatar: _AvatarPicker(
+                profile: p,
+                uploading: _uploadingAvatar,
+                onTap: () => _pickAndUploadAvatar(user),
+              ),
+            ),
             const SizedBox(height: 20),
             const SectionLabel('Career'),
             const SizedBox(height: 8),
@@ -134,8 +212,9 @@ class _TeamsList extends StatelessWidget {
 }
 
 class _IdentityBlock extends StatelessWidget {
-  const _IdentityBlock({required this.profile});
+  const _IdentityBlock({required this.profile, required this.avatar});
   final LbPlayerProfile profile;
+  final Widget avatar;
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +227,7 @@ class _IdentityBlock extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          RankHex(rank: rank.level, size: 76, color: rankAccent(rank)),
+          avatar,
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -201,6 +280,87 @@ class _IdentityBlock extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AvatarPicker extends StatelessWidget {
+  const _AvatarPicker({
+    required this.profile,
+    required this.uploading,
+    required this.onTap,
+  });
+
+  final LbPlayerProfile profile;
+  final bool uploading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = profile.user.avatarUrl;
+    final fallback = RankHex(
+      rank: profile.rank.rank.level,
+      size: 76,
+      color: rankAccent(profile.rank.rank),
+    );
+    return Semantics(
+      button: true,
+      label: 'Change profile photo',
+      child: Tooltip(
+        message: 'Change profile photo',
+        child: InkWell(
+          key: const Key('profile-avatar-picker'),
+          onTap: uploading ? null : onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 82,
+            height: 82,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (avatarUrl == null || avatarUrl.isEmpty)
+                  fallback
+                else
+                  ClipOval(
+                    child: Image.network(
+                      avatarUrl,
+                      width: 76,
+                      height: 76,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => fallback,
+                    ),
+                  ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: LbColors.lime,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: LbColors.surface, width: 2),
+                    ),
+                    child: uploading
+                        ? const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: LbColors.limeInk,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 14,
+                            color: LbColors.limeInk,
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

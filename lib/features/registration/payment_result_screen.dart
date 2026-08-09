@@ -1,6 +1,12 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/models.dart';
+import '../../core/data/providers.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/lb_card.dart';
@@ -11,13 +17,14 @@ import '../../core/widgets/slant_button.dart';
 /// `success` (slot reserved), `pending` (async settlement), `failed` (retry).
 ///
 /// Reachable via `/register/result/success|pending|failed?tournament=…`.
-class PaymentResultScreen extends StatelessWidget {
+class PaymentResultScreen extends ConsumerStatefulWidget {
   const PaymentResultScreen({
     required this.status,
     this.tournamentTitle = 'Manila Ascent Cup S3',
     this.amount = '₱500.00',
     this.reference,
     this.tournamentId,
+    this.registrationId,
     super.key,
   });
 
@@ -26,9 +33,62 @@ class PaymentResultScreen extends StatelessWidget {
   final String amount;
   final String? reference;
   final String? tournamentId;
+  final String? registrationId;
+
+  @override
+  ConsumerState<PaymentResultScreen> createState() =>
+      _PaymentResultScreenState();
+}
+
+class _PaymentResultScreenState extends ConsumerState<PaymentResultScreen> {
+  StreamSubscription<RegistrationPaymentStatus>? _subscription;
+  late PaymentResult _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.status;
+    final registrationId = widget.registrationId;
+    if (registrationId != null) {
+      _subscription = ref
+          .read(registrationRepoProvider)
+          .watchPayment(registrationId)
+          .listen(
+            _applyBackendStatus,
+            onError: (Object error, StackTrace stackTrace) {
+              if (kDebugMode) {
+                debugPrint(
+                  'Payment status refresh failed: $error\n$stackTrace',
+                );
+              }
+            },
+          );
+    }
+  }
+
+  void _applyBackendStatus(RegistrationPaymentStatus status) {
+    final confirmed = switch (status) {
+      RegistrationPaymentStatus.paid => PaymentResult.success,
+      RegistrationPaymentStatus.failed ||
+      RegistrationPaymentStatus.refunded => PaymentResult.failed,
+      // A return from PayMongo is not settlement proof. Preserve the initial
+      // success/cancel return state until a terminal webhook state arrives.
+      RegistrationPaymentStatus.pending => widget.status,
+    };
+    if (mounted && confirmed != _status) {
+      setState(() => _status = confirmed);
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final status = _status;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -58,13 +118,16 @@ class PaymentResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               _ReceiptCard(
-                tournamentTitle: tournamentTitle,
-                amount: amount,
-                reference: reference ?? 'pi_stub_${status.name}',
+                tournamentTitle: widget.tournamentTitle,
+                amount: widget.amount,
+                reference:
+                    widget.reference ??
+                    widget.registrationId ??
+                    'pi_stub_${status.name}',
                 status: status,
               ),
               const Spacer(),
-              _ActionsRow(status: status, tournamentId: tournamentId),
+              _ActionsRow(status: status, tournamentId: widget.tournamentId),
               const SizedBox(height: 8),
               if (status != PaymentResult.failed)
                 Text(
@@ -240,11 +303,17 @@ class _ReceiptCard extends StatelessWidget {
                   letterSpacing: 1,
                 ),
               ),
-              Text(
-                reference,
-                style: LbType.metaSm.copyWith(
-                  color: LbColors.textSecondary,
-                  fontSize: 10,
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  reference,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: LbType.metaSm.copyWith(
+                    color: LbColors.textSecondary,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],

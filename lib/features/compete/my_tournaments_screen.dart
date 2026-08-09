@@ -120,7 +120,25 @@ class _TabBody extends StatelessWidget {
       for (final entry in d.live) ...[
         _LiveMatchReadyCard(
           entry: entry,
-          onTap: () => context.push('/submit-result'),
+          onTap: () {
+            final matchId = entry.currentMatchId;
+            if (matchId == null) {
+              context.push('/bracket/${entry.tournament.id}');
+              return;
+            }
+            switch (entry.matchAction) {
+              case LbMatchAction.submitResult:
+                context.push('/submit-result/$matchId');
+                return;
+              case LbMatchAction.verifyResult:
+                context.push('/verify-result/$matchId');
+                return;
+              case LbMatchAction.awaitingVerification:
+              case LbMatchAction.none:
+                context.push('/bracket/${entry.tournament.id}');
+                return;
+            }
+          },
           onBracket: () => context.push('/bracket/${entry.tournament.id}'),
         ),
         const SizedBox(height: 14),
@@ -279,6 +297,18 @@ class _LiveMatchReadyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = entry.tournament;
+    final actionLabel = switch (entry.matchAction) {
+      LbMatchAction.submitResult => 'Submit result ›',
+      LbMatchAction.verifyResult => 'Review result ›',
+      LbMatchAction.awaitingVerification => 'Awaiting review',
+      LbMatchAction.none => 'View bracket',
+    };
+    final statusLabel = switch (entry.matchAction) {
+      LbMatchAction.verifyResult => 'REVIEW NEEDED',
+      LbMatchAction.awaitingVerification => 'UNDER REVIEW',
+      LbMatchAction.submitResult => 'READY NOW',
+      LbMatchAction.none => 'QUEUED',
+    };
     return LbCard(
       highlighted: true,
       padding: EdgeInsets.zero,
@@ -369,7 +399,7 @@ class _LiveMatchReadyCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        entry.matchReady ? 'READY NOW' : 'QUEUED',
+                        statusLabel,
                         style: LbType.metaSm.copyWith(
                           color: entry.matchReady
                               ? LbColors.lime
@@ -384,7 +414,7 @@ class _LiveMatchReadyCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: SlantButton(
-                          label: 'Match ready ›',
+                          label: actionLabel,
                           onPressed: onTap,
                           height: 40,
                           notch: 8,

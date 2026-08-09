@@ -1,6 +1,6 @@
 # Labaan — Handoff
 
-**Last updated:** 2026-07-30
+**Last updated:** 2026-08-01
 **State:** Player mobile app is fully navigable and uses the hosted sibling
 `labaan-backend` Supabase project by default for normal app launches.
 Firebase project `labaan-f3fa6` owns Google and phone
@@ -8,13 +8,150 @@ authentication, while Supabase maps Firebase UIDs to the profile UUIDs used
 by application tables. The local backend has a complete, idempotent
 development seed. Mock mode is restricted to automated tests or an explicit
 `USE_MOCK_BACKEND=true` launch.
-Most privileged backend Edge Functions are still stubs.
+Only the real `paymongo-webhook` Edge Function remains a stub.
 
 The first privileged slice is now implemented: registration reservation and
 the PayMongo-shaped mock payment adapter are deployed to the hosted dev
 project. GCash simulates success, Maya stays pending, and card simulates a
-decline. See [`docs/IMPLEMENTATION_CHECKLIST.md`](docs/IMPLEMENTATION_CHECKLIST.md)
-for the maintained cross-project backlog.
+decline. Match participants can also upload evidence directly to the private
+`match-screenshots` bucket and submit a non-tied result for moderator review;
+the database creates a 30-minute verification queue item transactionally.
+An opposing team member or assigned tournament moderator can review the
+private evidence and confirm the result, which completes the match and
+resolves that queue item atomically. Match participants can instead open a
+structured dispute; that marks the match disputed, notifies the other
+participants, and creates a priority-1 moderator item with a 15-minute SLA.
+Organizers can now lock paid entrants into deterministic single- or
+double-elimination brackets. Byes advance automatically, verified results
+route winners and losers to the correct downstream slots, and the grand final
+completes the tournament.
+Every played match completion now snapshots its paid participants into an
+idempotency ledger, adds one win or loss without replacing historical totals,
+recomputes ranks from the active thresholds, and emits a rank-up notification
+when a player crosses a tier. Automatic bracket byes do not affect ranks.
+The same completion pipeline evaluates all seven configured achievement
+badges. Tournament-only rules wait for a completed bracket, incomplete match
+history cannot earn Untouchable, and unique badge awards make retries safe.
+Tournament completion now also creates at most one prize disbursement for the
+terminal bracket winner. The winning captain's saved GCash/Maya destination
+selects the method; missing setup produces a retry-safe notification instead
+of blocking completion. Hosted dev uses deterministic mock settlement until
+real PayMongo payout credentials and APIs are activated.
+Postgres now checks moderator SLAs every minute. Overdue pending work is
+atomically marked escalated, raised to priority 1, routed to the tournament
+organizer, written to the audit log, and announced to both organizer and
+original moderator. `FOR UPDATE SKIP LOCKED` and status transitions make
+scheduled and manual runs concurrency-safe and idempotent.
+Player profiles now load career totals, completed captain payouts, and the five
+most recent completed paid tournaments from a public aggregate RPC. Money stays
+in centavos through Postgres and converts to pesos only in the Flutter adapter;
+placement is derived from the terminal winner and recorded elimination order.
+Captain-issued team invitations now persist in `team_invitations` through the
+authenticated `team-invite` Edge Function. The locked command verifies current
+captain ownership, rejects invalid targets, is idempotent for an existing
+pending invite, and creates one push-backed recipient notification. The
+Flutter `TeamsRepo.invite` adapter is connected. Migration
+`0037_team_invitations.sql` is deployed to hosted dev.
+The hosted `team-invite` function uses `verify_jwt = false` so Firebase
+third-party bearer tokens reach the function, which validates them through
+`current_user_id()` before any service-role write. Its live unauthenticated
+probe returns the function's expected `401 unauthorized` response.
+Migration `0038_team_invitation_responses.sql` adds recipient-only,
+idempotent accept/decline. Acceptance adds one roster membership; decline does
+not; expired invitations cannot join; all outcomes resolve the related
+notification. The Flutter inline actions and resolved-state UI pass focused
+widget tests. Hosted `team-invite-respond` is deployed with the same internally
+validated `verify_jwt = false` gateway pattern, and its live unauthenticated
+probe returns the expected `401 unauthorized` response.
+Captains can now recruit through either a direct username dialog or a filtered
+Player Search result. `team-invite` accepts exactly one target identifier,
+resolves case-insensitive usernames server-side, and sends both paths through
+the same captain-authorized, duplicate-safe invitation transaction. The
+updated function is deployed, its unauthenticated probe still returns the
+expected internal `401 unauthorized`, and focused widget/contract tests cover
+the new actions.
+Team identity editing, member removal, captain transfer, and member leave now
+run through the deployed `team-manage` command and locked `manage_team` RPC.
+The transaction keeps ownership and roster roles synchronized, requires a
+captain to transfer before leaving, and blocks roster shrinkage during locked
+or live tournaments. The `/team` shortcut now resolves the signed-in player's
+hosted team instead of the old mock ID. Migration
+`20260801061750_team_management_commands.sql` is deployed and verified with a
+rollback-only hosted transaction.
+
+The P2 wallet is now backed by `get_my_wallet(integer)` and a player-owned
+financial ledger. The app shows completed prizes, paid entry fees, pending
+prizes, net tournament cash flow, and filterable transaction history at
+`/wallet`; it explicitly does not present these external charges/payouts as a
+stored balance. Disbursements now persist an immutable `recipient_user_id`, so
+captain transfers cannot move historical winnings to a different player.
+Migration `20260801083525_wallet_transaction_history.sql` is deployed; a
+rollback-only hosted player query returns the expected ₱650 entry fees, ₱184
+prizes, and four ledger rows.
+Account deletion now has exact `DELETE` confirmation, a cancellable 30-day
+grace period, and review holds for captains or unsettled payouts. The daily
+service worker permanently removes the Firebase identity and direct
+operational PII, pseudonymizes the retained profile, and keeps a one-way
+identity tombstone plus financial/tournament history for up to five years.
+Migration `20260801123403_account_deletion_retention.sql` and both deletion
+functions are deployed to hosted dev with internal Firebase/service-role
+authentication. The hosted project has no due requests, so no real account
+was deleted while verifying the schedule and authorization boundary.
+Player profiles now include a gallery-backed avatar picker. JPEG, PNG, and
+WebP images are resized by the picker, rejected above 2 MiB, uploaded to the
+public `avatars` bucket at the stable `<profile UUID>/avatar` path, and saved
+to `profiles.avatar_url` with a cache-busting version. Storage policies allow
+the current Firebase/Supabase identity to replace only its own object.
+Migration `20260801141848_avatar_storage.sql` is deployed to hosted dev, and a
+missing-object probe confirmed the public bucket endpoint without writing
+test data.
+Tournament detail sharing now opens the native iOS/Android share sheet with a
+validated `labaan://tournament/<id>` URL. `app_links` is initialized before
+the first frame, accepts only the tournament scheme/host and a constrained ID,
+normalizes cold-start and foreground events into the existing GoRouter route,
+and ignores OAuth or malformed links. Both native targets compile, and an iOS
+simulator smoke test opened the hosted Cavite Open Qualifier directly from its
+custom-scheme URL.
+Browse now has a real tournament-title search field with a 350 ms debounce,
+immediate keyboard submission, clear action, and query-aware empty state. The
+filter is passed to the hosted PostgREST query rather than applied to a loaded
+page, and `20260801155157_tournament_title_search.sql` adds an
+`extensions.pg_trgm` GIN index for case-insensitive substring matching. A
+hosted read-only “cavite” query returned exactly Cavite Open Qualifier.
+The Home Host and Support quick actions now open real destinations. Host keeps
+organizer provisioning and operations in the planned separate web app while
+showing onboarding requirements, organizer-specific help, and a safe link to
+the official GAB registry. Support routes players to the live connected-account,
+payout, notification, competition, privacy, and terms flows. No placeholder
+email address or unpublished organizer portal is presented as operational.
+Typography now uses bundled Chakra Petch, IBM Plex Sans, and IBM Plex Mono
+assets instead of runtime `google_fonts` fetching. Their OFL texts are packaged
+and registered with Flutter's license registry. Visually reviewed Host and
+organizer-context Support baselines provide the first deterministic golden
+regressions.
+CI now enforces a repository-owned 59% line-coverage floor after
+`flutter test --coverage`. The checked-in Dart parser rejects missing or
+malformed LCOV data and reports exact covered/total counts; the current
+baseline is 59.82% (3,751/6,270 lines).
+The interactive Google account-selection and sign-in flow has been manually
+smoke-tested successfully on both iOS and Android devices.
+Signed-in installations now register and refresh FCM tokens with Supabase.
+Notification inserts fan out through a preference-aware durable queue, and the
+hosted `push-deliver` worker runs every minute using encrypted Vault-held
+service credentials. Scheduled invocations are returning HTTP 200, and the
+APNs authentication key is uploaded in Firebase. After disabling NextDNS, the
+physical iPhone registered an active `ios`/`dev` FCM token with Supabase. The
+first queued smoke-test send failed with `401:THIRD_PARTY_AUTH_ERROR` because
+Firebase's development slot used production-only key `65X4TWLB37`. The slot
+now uses the team's sandbox key `7Q4KA53S2U`; the production slot remains on
+`65X4TWLB37`. A fresh physical-device smoke test was accepted by FCM and marked
+`sent` on the first worker attempt, and its foreground banner was confirmed on
+the iPhone. A second test on the release-mode Dev build confirmed background
+delivery and that tapping the notification opens `/notifications`. The earlier
+apparent cold-start freeze was the iOS debug build relaunching without Flutter
+tooling attached, not a notification-routing failure.
+See [`docs/IMPLEMENTATION_CHECKLIST.md`](docs/IMPLEMENTATION_CHECKLIST.md) for
+the maintained cross-project backlog.
 
 ---
 
@@ -41,8 +178,10 @@ with backend credentials present, uses Firebase verification.
 
 The sibling backend's local Supabase stack is seeded and can be rebuilt with
 `npm run db:reset`. The hosted development project
-`xmbfzcgejpzvgrfvvfyi` also has migrations `0019`–`0024` and the same
-synthetic seed, applied on 2026-07-28.
+`xmbfzcgejpzvgrfvvfyi` also has migrations through
+`20260801061750_team_management_commands.sql` and the same synthetic seed. The
+current command functions, scheduled queue escalation, and scheduled push
+delivery are deployed.
 
 ---
 
@@ -77,7 +216,7 @@ synthetic seed, applied on 2026-07-28.
 
 ### Phase 1 — Scaffold + design system (tasks 1–4)
 - Flutter project scaffolded with `flutter create` (org `com.labaan`).
-- go_router + google_fonts (Chakra Petch, IBM Plex Sans, IBM Plex Mono).
+- go_router + locally bundled Chakra Petch, IBM Plex Sans, and IBM Plex Mono.
 - Full color palette, type ramp, theme, and reusable widgets ported from HiFi.
 
 ### Phase 2 — Screens (tasks 5–10)
@@ -164,7 +303,7 @@ Backend swap = 11 provider-binding lines.
 | §9.3 · Idempotency keys on PayMongo | `payments.idempotency_key` unique column |
 | §9.3 · RLS at DB level | Full policies in `0003_rls.sql` |
 | §11 · CAPTCHA on registration | `_CaptchaNote` on Registration screen |
-| §11 · Pre-signed URL for screenshots | `SupabaseResultsRepo.requestScreenshotUploadUrl` |
+| §11 · Pre-signed URL for screenshots | `SupabaseResultsRepo.uploadScreenshot` uploads directly to the private `match-screenshots` bucket |
 | §12 · Legal / regulatory checklist | Documented in README + memory |
 
 ---
@@ -172,9 +311,10 @@ Backend swap = 11 provider-binding lines.
 ## Tests
 
 ```bash
-flutter test                    # 69 passing
+flutter test                    # 105 passing
 flutter analyze                 # clean
-dart format --set-exit-if-changed lib test   # clean
+dart format --set-exit-if-changed lib test tool   # clean
+dart run tool/check_coverage.dart             # 59.82% ≥ 59.0%
 ```
 
 CI runs all three on every push / PR to `main`.
@@ -183,20 +323,32 @@ CI runs all three on every push / PR to `main`.
 
 ## Known limitations / not done
 
+- **Facebook authentication** — explicitly deferred pending product-scope and
+  provider-setup decisions.
 - **App icons + splash** — user is designing these.
-- **Golden tests** — need Chakra Petch / IBM Plex bundled locally instead of google_fonts fetching at runtime.
 - **Broader integration coverage** — Firebase phone auth, settings, payout
   preferences, and mock GCash registration are covered against hosted dev;
-  result/dispute and real PayMongo flows are not.
-- **Google sign-in device smoke test** — provider and platform configuration are complete, but the interactive account-selection flow still needs a manual smoke test on iOS and Android.
+  moderator dispute resolution and real PayMongo flows are not.
 - **PayMongo account activation** — the backend now has the correct
   transactional reservation/payment boundary and a deterministic dev adapter,
   but real Checkout/Payment Intent calls from the Edge Function, activated
   channels, and signed webhook processing still require merchant credentials.
-- **FCM push wiring** — repo interfaces don't own push subscription; needs `firebase_messaging` init in `main.dart` when Firebase project exists.
-- **Real Wallet + payment method management** — not built (was in the "post-MVP polish" list).
-- **Coverage threshold** — CI uploads `lcov.info` but no enforced minimum yet.
-- **Deep-link handler** for share URLs into the app (`labaan://tournament/xxx`).
+- **iOS APNs delivery** — the app registers and refreshes FCM tokens,
+  unregisters before sign-out, presents foreground notifications, and routes
+  safe notification deep links. Migration `0034_push_notifications.sql` and
+  the deployed `push-deliver` worker provide a preference-aware durable queue,
+  bounded retry, and invalid-token cleanup. Firebase Edge secrets and the
+  one-minute Vault-backed schedule are active and returning HTTP 200. The APNs
+  development credential now uses sandbox key `7Q4KA53S2U` for Team ID
+  `KK7GP4272M`, while production remains on `65X4TWLB37`. Device registration
+  succeeds, and a fresh smoke-test delivery was marked `sent` on the first
+  worker attempt after the credential fix. Foreground presentation, background
+  delivery, and notification-tap routing to `/notifications` are verified on a
+  physical iPhone using the release-mode Dev build.
+- **Organizer/support operations** — direct case submission and organizer
+  applications remain part of the planned separate organizer/moderator/admin
+  web app. The player app currently provides accurate onboarding and live
+  self-service destinations without inventing a support address or portal.
 
 ---
 
@@ -205,14 +357,12 @@ CI runs all three on every push / PR to `main`.
 **A. Field polish before alpha:**
 - Phone OTP verification screen (real sign-in end-to-end).
 - Bundled fonts + golden test suite.
-- Wallet screen (transaction history from `LbPayment` + `LbDisbursement`).
 - Report/block user flow.
 
 **B. Continue backend integration:**
 - Replace the PayMongo mock adapter with real Checkout/Payment Intent calls.
 - Verify signed PayMongo webhooks and idempotent event processing.
-- Implement result submission, verification, and dispute Edge Functions.
-- Wire FCM + `firebase_messaging`.
+- Implement moderator dispute resolution in the separate admin application.
 
 **C. Nice-to-have UX layer:**
 - Custom slant page transitions (currently fade-through).

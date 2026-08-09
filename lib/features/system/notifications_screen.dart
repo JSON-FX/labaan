@@ -17,8 +17,8 @@ import '../../core/widgets/team_avatar.dart';
 
 /// System · 2A · Notifications.
 ///
-/// Consumes [notificationsProvider] as a stream so accept/decline on the
-/// team-invite card removes the item optimistically without reloading.
+/// Consumes [notificationsProvider] as a stream so team-invite responses and
+/// their resolved state appear without reloading.
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
@@ -218,13 +218,63 @@ class _StandardTile extends StatelessWidget {
   }
 }
 
-class _TeamInviteTile extends StatelessWidget {
+class _TeamInviteTile extends StatefulWidget {
   const _TeamInviteTile({required this.notification, required this.repo});
   final LbNotification notification;
   final NotificationsRepoActions repo;
 
   @override
+  State<_TeamInviteTile> createState() => _TeamInviteTileState();
+}
+
+class _TeamInviteTileState extends State<_TeamInviteTile> {
+  bool _submitting = false;
+  String? _resolvedStatus;
+
+  Future<void> _respond(bool accept) async {
+    final invitationId = widget.notification.payload['invitation_id'];
+    if (invitationId is! String || invitationId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This invitation is no longer actionable.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await widget.repo.respondToTeamInvite(
+        invitationId: invitationId,
+        accept: accept,
+      );
+      if (!mounted) return;
+      setState(() {
+        _resolvedStatus = accept ? 'accepted' : 'declined';
+        _submitting = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            accept
+                ? 'Could not accept the invitation.'
+                : 'Could not decline the invitation.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final notification = widget.notification;
+    final persistedStatus = notification.payload['invitation_status'];
+    final status =
+        _resolvedStatus ?? (persistedStatus is String ? persistedStatus : null);
+    final invitationId = notification.payload['invitation_id'];
+
     return LbCard(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -268,32 +318,42 @@ class _TeamInviteTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: SlantButton(
-                  label: 'Accept',
-                  onPressed: () => repo.respondToTeamInvite(
-                    notificationId: notification.id,
-                    accept: true,
-                  ),
-                  height: 34,
-                  notch: 6,
+          if (status != null || invitationId is! String)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                status == null
+                    ? 'INVITATION UNAVAILABLE'
+                    : 'INVITATION ${status.toUpperCase()}',
+                style: LbType.metaSm.copyWith(
+                  color: status == 'accepted'
+                      ? LbColors.lime
+                      : LbColors.textMuted,
+                  letterSpacing: 0.8,
                 ),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: GhostButton(
-                  label: 'Decline',
-                  onPressed: () => repo.respondToTeamInvite(
-                    notificationId: notification.id,
-                    accept: false,
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: SlantButton(
+                    label: _submitting ? 'Working…' : 'Accept',
+                    onPressed: _submitting ? null : () => _respond(true),
+                    height: 34,
+                    notch: 6,
                   ),
-                  height: 34,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: GhostButton(
+                    label: 'Decline',
+                    onPressed: _submitting ? null : () => _respond(false),
+                    height: 34,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

@@ -32,4 +32,32 @@ void main() {
     expect(find.text('Dispute opened'), findsOneWidget);
     expect(find.textContaining('15m'), findsWidgets);
   });
+
+  testWidgets('accepting a team invite resolves its inline actions', (
+    tester,
+  ) async {
+    setPhoneViewport(tester);
+    await tester.pumpWidget(hostRoute(const NotificationsScreen()));
+    await pumpAndSettleForData(tester);
+
+    await tester.tap(find.text('ACCEPT'));
+    await tester.pump();
+
+    expect(find.text('INVITATION ACCEPTED'), findsOneWidget);
+    expect(find.text('DECLINE'), findsNothing);
+  });
+
+  testWidgets('declining a team invite resolves its inline actions', (
+    tester,
+  ) async {
+    setPhoneViewport(tester);
+    await tester.pumpWidget(hostRoute(const NotificationsScreen()));
+    await pumpAndSettleForData(tester);
+
+    await tester.tap(find.text('DECLINE'));
+    await tester.pump();
+
+    expect(find.text('INVITATION DECLINED'), findsOneWidget);
+    expect(find.text('ACCEPT'), findsNothing);
+  });
 }

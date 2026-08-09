@@ -17,7 +17,9 @@ import '../../core/widgets/slant_button.dart';
 /// Reads [playerSearchProvider(PlayerSearchQuery)]. Min-rank chip and
 /// free-agent toggle drive the query.
 class PlayerSearchScreen extends ConsumerStatefulWidget {
-  const PlayerSearchScreen({super.key});
+  const PlayerSearchScreen({required this.teamId, super.key});
+
+  final String teamId;
 
   @override
   ConsumerState<PlayerSearchScreen> createState() => _PlayerSearchScreenState();
@@ -26,10 +28,40 @@ class PlayerSearchScreen extends ConsumerStatefulWidget {
 class _PlayerSearchScreenState extends ConsumerState<PlayerSearchScreen> {
   Rank _minRank = Rank.champion;
   bool _freeAgentsOnly = true;
+  String _username = '';
+  final Set<String> _pendingInvites = {};
+  final Set<String> _sentInvites = {};
+
+  Future<void> _invite(String userId, String username) async {
+    if (_pendingInvites.contains(userId) || _sentInvites.contains(userId)) {
+      return;
+    }
+    setState(() => _pendingInvites.add(userId));
+    try {
+      await ref
+          .read(teamsRepoProvider)
+          .invite(teamId: widget.teamId, userId: userId);
+      if (!mounted) return;
+      setState(() {
+        _pendingInvites.remove(userId);
+        _sentInvites.add(userId);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Invitation sent to $username.')));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _pendingInvites.remove(userId));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_inviteErrorMessage(error))));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final query = PlayerSearchQuery(
+      username: _username,
       minRank: _minRank,
       freeAgentsOnly: _freeAgentsOnly,
     );
@@ -53,17 +85,26 @@ class _PlayerSearchScreenState extends ConsumerState<PlayerSearchScreen> {
               border: Border.all(color: LbColors.border),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.search, size: 18, color: LbColors.textDim),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Search usernames',
-                    style: LbType.bodySm.copyWith(color: LbColors.textDim),
-                  ),
+            child: TextField(
+              key: const Key('player-username-search'),
+              autocorrect: false,
+              textInputAction: TextInputAction.search,
+              onChanged: (value) => setState(() => _username = value.trim()),
+              style: LbType.bodySm,
+              decoration: InputDecoration(
+                hintText: 'Search usernames',
+                hintStyle: LbType.bodySm.copyWith(color: LbColors.textDim),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  size: 18,
+                  color: LbColors.textDim,
                 ),
-              ],
+                prefixIconConstraints: const BoxConstraints(minWidth: 34),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -103,12 +144,16 @@ class _PlayerSearchScreenState extends ConsumerState<PlayerSearchScreen> {
                 children: [
                   for (final r in page.items) ...[
                     _PlayerCard(
+                      userId: r.user.id,
                       handle: r.user.username,
                       rank: r.rank.rank,
                       wins: r.rank.totalWins,
                       region: r.user.region ?? 'PH',
                       games: r.games.join(' · '),
                       onTeam: !r.isFreeAgent,
+                      inviting: _pendingInvites.contains(r.user.id),
+                      invited: _sentInvites.contains(r.user.id),
+                      onInvite: () => _invite(r.user.id, r.user.username),
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -211,20 +256,28 @@ class _FreeAgentToggle extends StatelessWidget {
 
 class _PlayerCard extends StatelessWidget {
   const _PlayerCard({
+    required this.userId,
     required this.handle,
     required this.rank,
     required this.wins,
     required this.region,
     required this.games,
+    required this.onInvite,
     this.onTeam = false,
+    this.inviting = false,
+    this.invited = false,
   });
 
+  final String userId;
   final String handle;
   final Rank rank;
   final int wins;
   final String region;
   final String games;
+  final VoidCallback onInvite;
   final bool onTeam;
+  final bool inviting;
+  final bool invited;
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +294,14 @@ class _PlayerCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(handle, style: LbType.cardTitleSm),
+                    Expanded(
+                      child: Text(
+                        handle,
+                        style: LbType.cardTitleSm,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     if (onTeam)
                       const LbChip('ON TEAM', tone: LbChipTone.neutral)
@@ -267,14 +327,29 @@ class _PlayerCard extends StatelessWidget {
             ),
           ),
           GhostButton(
-            label: 'Invite',
-            onPressed: onTeam ? null : () {},
+            key: Key('invite-player-$userId'),
+            label: invited ? 'Invited' : (inviting ? 'Sending…' : 'Invite'),
+            onPressed: onTeam || inviting || invited ? null : onInvite,
             height: 30,
           ),
         ],
       ),
     );
   }
+}
+
+String _inviteErrorMessage(Object error) {
+  final value = error.toString();
+  if (value.contains('already_team_member')) {
+    return 'That player is already on this team.';
+  }
+  if (value.contains('cannot_invite_self')) {
+    return 'You cannot invite yourself.';
+  }
+  if (value.contains('not_team_captain')) {
+    return 'Only the team captain can invite players.';
+  }
+  return 'Could not send the invitation. Try again.';
 }
 
 class _Skeleton extends StatelessWidget {

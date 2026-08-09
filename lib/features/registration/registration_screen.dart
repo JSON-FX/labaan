@@ -13,6 +13,7 @@ import '../../core/widgets/lb_chip.dart';
 import '../../core/widgets/section_label.dart';
 import '../../core/widgets/slant_button.dart';
 import '../../core/widgets/team_avatar.dart';
+import 'payment_checkout_screen.dart';
 
 /// Registration · 1A · Registration & Payment.
 ///
@@ -54,13 +55,24 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     setState(() => _submitting = true);
     final repo = ref.read(registrationRepoProvider);
     try {
-      final registration = await repo.register(
+      final checkout = await repo.register(
         tournamentId: t.id,
         userId: user.id,
         teamId: _teamMode ? selectedTeam?.id : null,
         method: _selectedMethod,
         captchaToken: 'stub-captcha',
       );
+      final registration = checkout.registration;
+      if (checkout.checkoutUrl case final checkoutUrl?) {
+        if (!mounted) return;
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => PaymentCheckoutScreen(checkoutUrl: checkoutUrl),
+          ),
+        );
+        return;
+      }
       if (!mounted) return;
       final result = switch (registration.paymentStatus) {
         RegistrationPaymentStatus.paid => 'success',
@@ -77,6 +89,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             'amount': formatPeso(registration.amountPhp),
             if (registration.paymongoRef != null)
               'reference': registration.paymongoRef,
+            'registrationId': registration.id,
           },
         ).toString(),
       );
@@ -220,8 +233,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     gradient: const [Color(0xFF2A2F3A), Color(0xFF14171E)],
                   ),
                   const SizedBox(height: 10),
-                  const _MockPaymentNote(),
-                  const SizedBox(height: 8),
+                  if (!ref.watch(backendEnabledProvider)) ...[
+                    const _MockPaymentNote(),
+                    const SizedBox(height: 8),
+                  ],
                   const _CaptchaNote(),
                 ],
               ),

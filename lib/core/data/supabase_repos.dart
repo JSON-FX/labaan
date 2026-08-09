@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -144,6 +145,7 @@ LbMatch _matchFromRow(Map<String, dynamic> row, {BracketSide? side}) {
     id: row['id'] as String,
     tournamentId: row['tournament_id'] as String,
     round: (row['round'] as num).toInt(),
+    position: (row['position'] as num?)?.toInt() ?? 1,
     bracketSide:
         side ??
         (row['bracket_side'] == null
@@ -157,6 +159,12 @@ LbMatch _matchFromRow(Map<String, dynamic> row, {BracketSide? side}) {
     winnerId: row['winner_id'] as String?,
     scoreA: (row['score_a'] as num?)?.toInt() ?? 0,
     scoreB: (row['score_b'] as num?)?.toInt() ?? 0,
+    status: _enumFromSnake(
+      LbMatchStatus.values,
+      row['status'] as String? ?? 'pending',
+    ),
+    submittedByUserId: row['submitted_by'] as String?,
+    submittedTeamId: row['submitted_team_id'] as String?,
     screenshotUrl: row['screenshot_url'] as String?,
     verifiedByModeratorId: row['verified_by'] as String?,
     verifiedAt: row['verified_at'] == null
@@ -211,7 +219,10 @@ LbRegistration _registrationFromRow(Map<String, dynamic> row) {
 
 Map<String, dynamic> _functionData(FunctionResponse response) {
   if (response.status < 200 || response.status >= 300) {
-    throw StateError('Backend function failed (${response.status})');
+    final body = response.data;
+    final code = body is Map ? body['error'] ?? body['message'] : null;
+    final detail = code == null ? '' : ': $code';
+    throw StateError('Backend function failed (${response.status})$detail');
   }
   final body = response.data;
   if (body is Map && body['data'] is Map) return _map(body['data']);
@@ -329,11 +340,34 @@ class SupabaseMyTournamentsRepo implements MyTournamentsRepo {
 
   @override
   Future<LbMyTournaments> forUser(String userId) async {
-    final rows = await _client
-        .from('registrations')
-        .select('*, tournaments!inner($_tournamentSelect)')
-        .eq('user_id', userId)
-        .eq('payment_status', 'paid');
+    final responses = await Future.wait<dynamic>([
+      _client
+          .from('registrations')
+          .select('*, tournaments!inner($_tournamentSelect)')
+          .eq('user_id', userId)
+          .eq('payment_status', 'paid'),
+      _client.from('team_members').select('team_id').eq('user_id', userId),
+    ]);
+    final rows = responses[0] as List<dynamic>;
+    final teamIds = {
+      for (final row in responses[1] as List<dynamic>) row['team_id'] as String,
+    };
+    final liveTournamentIds = <String>[
+      for (final row in rows)
+        if (_map(row['tournaments'])['status'] == 'live')
+          _map(row['tournaments'])['id'] as String,
+    ];
+    final matchRows = liveTournamentIds.isEmpty || teamIds.isEmpty
+        ? const <dynamic>[]
+        : await _client
+              .from('matches')
+              .select()
+              .inFilter('tournament_id', liveTournamentIds)
+              .inFilter('status', [
+                'ready',
+                'awaiting_result',
+                'awaiting_verification',
+              ]);
     final now = DateTime.now();
     final live = <LbLiveEntry>[];
     final upcoming = <LbUpcomingEntry>[];
@@ -342,11 +376,49 @@ class SupabaseMyTournamentsRepo implements MyTournamentsRepo {
       final tournament = _tournamentFromRow(_map(row['tournaments']));
       switch (tournament.status) {
         case TournamentStatus.live:
+          Map<String, dynamic>? currentMatch;
+          for (final candidate in matchRows) {
+            if (candidate['tournament_id'] == tournament.id &&
+                (teamIds.contains(candidate['team_a_id']) ||
+                    teamIds.contains(candidate['team_b_id']))) {
+              currentMatch = _map(candidate);
+              break;
+            }
+          }
+          final matchStatus = currentMatch?['status'] as String?;
+          final submittedTeamId = currentMatch?['submitted_team_id'] as String?;
+          final opponentTeamIds = currentMatch == null
+              ? const <String>{}
+              : {
+                  if (currentMatch['team_a_id'] != submittedTeamId)
+                    currentMatch['team_a_id'] as String,
+                  if (currentMatch['team_b_id'] != submittedTeamId)
+                    currentMatch['team_b_id'] as String,
+                };
+          final matchAction = switch (matchStatus) {
+            'ready' || 'awaiting_result' => LbMatchAction.submitResult,
+            'awaiting_verification'
+                when currentMatch?['submitted_by'] == userId ||
+                    (submittedTeamId != null &&
+                        teamIds.contains(submittedTeamId) &&
+                        teamIds.intersection(opponentTeamIds).isEmpty) =>
+              LbMatchAction.awaitingVerification,
+            'awaiting_verification'
+                when teamIds.intersection(opponentTeamIds).isNotEmpty =>
+              LbMatchAction.verifyResult,
+            _ => LbMatchAction.none,
+          };
           live.add(
             LbLiveEntry(
               tournament: tournament,
-              matchReady: true,
-              currentBracketNode: 'CURRENT MATCH',
+              matchReady:
+                  matchAction == LbMatchAction.submitResult ||
+                  matchAction == LbMatchAction.verifyResult,
+              currentBracketNode: currentMatch == null
+                  ? 'NO MATCH READY'
+                  : 'ROUND ${currentMatch['round']}',
+              currentMatchId: currentMatch?['id'] as String?,
+              matchAction: matchAction,
             ),
           );
         case TournamentStatus.open:
@@ -401,7 +473,7 @@ class SupabaseBracketRepo implements BracketRepo {
         .from('matches')
         .stream(primaryKey: ['id'])
         .eq('tournament_id', tournamentId)
-        .map((rows) {
+        .asyncMap((rows) async {
           final nullable = rows
               .where((row) => row['bracket_side'] == null)
               .toList();
@@ -421,19 +493,41 @@ class SupabaseBracketRepo implements BracketRepo {
                 side: identical(row, finalRow) ? BracketSide.grandFinal : null,
               ),
           ];
+          final teamIds = {
+            for (final match in matches) ...[
+              if (match.teamAId.isNotEmpty) match.teamAId,
+              if (match.teamBId.isNotEmpty) match.teamBId,
+            ],
+          };
+          final teamRows = teamIds.isEmpty
+              ? const <dynamic>[]
+              : await _client
+                    .from('teams')
+                    .select()
+                    .inFilter('id', teamIds.toList());
+          final teams = {
+            for (final row in teamRows)
+              row['id'] as String: _teamFromRow(_map(row)),
+          };
+          int compareMatches(LbMatch a, LbMatch b) {
+            final round = a.round.compareTo(b.round);
+            return round != 0 ? round : a.position.compareTo(b.position);
+          }
+
           return LbBracket(
             tournamentId: tournamentId,
             upper: [
               for (final match in matches)
                 if (match.bracketSide == BracketSide.upper) match,
-            ]..sort((a, b) => a.round.compareTo(b.round)),
+            ]..sort(compareMatches),
             lower: [
               for (final match in matches)
                 if (match.bracketSide == BracketSide.lower) match,
-            ]..sort((a, b) => a.round.compareTo(b.round)),
+            ]..sort(compareMatches),
             grandFinal: matches
                 .where((match) => match.bracketSide == BracketSide.grandFinal)
                 .firstOrNull,
+            teams: teams,
           );
         });
   }
@@ -444,7 +538,7 @@ class SupabaseRegistrationRepo implements RegistrationRepo {
   final SupabaseClient _client;
 
   @override
-  Future<LbRegistration> register({
+  Future<RegistrationCheckout> register({
     required String tournamentId,
     required String userId,
     String? teamId,
@@ -459,8 +553,25 @@ class SupabaseRegistrationRepo implements RegistrationRepo {
       _functionData(reservationResponse),
     );
     if (reservation.paymentStatus == RegistrationPaymentStatus.paid) {
-      return reservation;
+      return RegistrationCheckout(registration: reservation);
     }
+
+    final returnQuery = {
+      'registrationId': reservation.id,
+      'tournamentId': reservation.tournamentId,
+    };
+    final successUrl = Uri(
+      scheme: 'labaan',
+      host: 'payment',
+      path: '/success',
+      queryParameters: returnQuery,
+    );
+    final cancelUrl = Uri(
+      scheme: 'labaan',
+      host: 'payment',
+      path: '/cancel',
+      queryParameters: returnQuery,
+    );
 
     final idempotencyKey =
         '$userId:$tournamentId:${DateTime.now().microsecondsSinceEpoch}';
@@ -471,10 +582,25 @@ class SupabaseRegistrationRepo implements RegistrationRepo {
         'registrationId': reservation.id,
         'method': method.name,
         'idempotencyKey': idempotencyKey,
+        'successUrl': successUrl.toString(),
+        'cancelUrl': cancelUrl.toString(),
       },
     );
     final paymentData = _functionData(paymentResponse);
-    return _registrationFromRow(_map(paymentData['registration']));
+    final checkoutUrlValue = paymentData['checkoutUrl'];
+    Uri? checkoutUrl;
+    if (checkoutUrlValue != null) {
+      checkoutUrl = Uri.tryParse(checkoutUrlValue.toString());
+      if (checkoutUrl == null ||
+          checkoutUrl.scheme != 'https' ||
+          checkoutUrl.host.isEmpty) {
+        throw StateError('Backend returned an invalid checkout URL');
+      }
+    }
+    return RegistrationCheckout(
+      registration: _registrationFromRow(_map(paymentData['registration'])),
+      checkoutUrl: checkoutUrl,
+    );
   }
 
   @override
@@ -498,16 +624,36 @@ class SupabaseResultsRepo implements ResultsRepo {
   final SupabaseClient _client;
 
   @override
-  Future<String> requestScreenshotUploadUrl({
+  Future<LbMatch> byId(String matchId) async {
+    final row = await _client
+        .from('matches')
+        .select()
+        .eq('id', matchId)
+        .single();
+    return _matchFromRow(row);
+  }
+
+  @override
+  Future<String> uploadScreenshot({
+    required String userId,
     required String matchId,
-    required int contentLengthBytes,
+    required Uint8List bytes,
+    required String contentType,
+    required String extension,
   }) async {
+    final path =
+        '$userId/$matchId/${DateTime.now().microsecondsSinceEpoch}.$extension';
+    final bucket = _client.storage.from('match-screenshots');
     final signed = await _client.storage
         .from('match-screenshots')
-        .createSignedUploadUrl(
-          '${firebase.FirebaseAuth.instance.currentUser?.uid ?? 'unknown'}/$matchId.jpg',
-        );
-    return signed.signedUrl;
+        .createSignedUploadUrl(path);
+    await bucket.uploadBinaryToSignedUrl(
+      path,
+      signed.token,
+      bytes,
+      FileOptions(contentType: contentType),
+    );
+    return path;
   }
 
   @override
@@ -515,7 +661,7 @@ class SupabaseResultsRepo implements ResultsRepo {
     required String matchId,
     required int scoreA,
     required int scoreB,
-    required String screenshotUrl,
+    required String screenshotPath,
   }) async {
     final response = await _client.functions.invoke(
       'match-submit-result',
@@ -523,8 +669,24 @@ class SupabaseResultsRepo implements ResultsRepo {
         'matchId': matchId,
         'scoreA': scoreA,
         'scoreB': scoreB,
-        'screenshotUrl': screenshotUrl,
+        'screenshotPath': screenshotPath,
       },
+    );
+    _functionData(response);
+  }
+
+  @override
+  Future<String?> screenshotPreviewUrl(String screenshotPath) {
+    return _client.storage
+        .from('match-screenshots')
+        .createSignedUrl(screenshotPath, 600);
+  }
+
+  @override
+  Future<void> verify({required String matchId}) async {
+    final response = await _client.functions.invoke(
+      'match-verify-result',
+      body: {'matchId': matchId},
     );
     _functionData(response);
   }
@@ -533,10 +695,11 @@ class SupabaseResultsRepo implements ResultsRepo {
   Future<void> openDispute({
     required String matchId,
     required String reason,
+    required String detail,
   }) async {
     final response = await _client.functions.invoke(
       'match-dispute',
-      body: {'matchId': matchId, 'reason': reason},
+      body: {'matchId': matchId, 'reason': reason, 'detail': detail},
     );
     _functionData(response);
   }
@@ -553,11 +716,16 @@ class SupabaseProfileRepo implements ProfileRepo {
       _client.from('user_rank').select().eq('user_id', userId).maybeSingle(),
       _client.from('user_badges').select().eq('user_id', userId),
       _client.from('team_members').select('team_id').eq('user_id', userId),
+      _client.rpc(
+        'get_player_profile_aggregates',
+        params: {'p_user_id': userId},
+      ),
     ]);
     final profile = responses[0] as Map<String, dynamic>;
     final rankRow = responses[1] as Map<String, dynamic>?;
     final badges = responses[2] as List<dynamic>;
     final memberships = responses[3] as List<dynamic>;
+    final aggregates = _map(responses[4]);
     final authUser = firebase.FirebaseAuth.instance.currentUser;
     final isCurrentUser = authUser?.uid == profile['firebase_uid'];
     final rank = rankRow == null
@@ -581,12 +749,21 @@ class SupabaseProfileRepo implements ProfileRepo {
           _enumFromSnake(AchievementBadge.values, row['badge_key'] as String),
       ],
       gamesPlayed: ((profile['games'] as List?) ?? const []).cast<String>(),
-      totalMatches: rank.totalWins + losses,
-      totalWins: rank.totalWins,
-      totalLosses: losses,
-      totalPayoutPhp: 0,
+      totalMatches: (aggregates['totalMatches'] as num?)?.toInt() ?? 0,
+      totalWins: (aggregates['totalWins'] as num?)?.toInt() ?? rank.totalWins,
+      totalLosses: (aggregates['totalLosses'] as num?)?.toInt() ?? losses,
+      totalPayoutPhp: _centavosToPhp(aggregates['totalPayoutCentavos']),
       teamIds: [for (final row in memberships) row['team_id'] as String],
-      recentTournaments: const [],
+      recentTournaments: [
+        for (final value
+            in (aggregates['recentTournaments'] as List?) ?? const [])
+          if (value is Map)
+            LbCompletedTournament(
+              tournament: _tournamentFromRow(_map(value['tournament'])),
+              finalPlace: (value['finalPlace'] as num?)?.toInt() ?? 2,
+              payoutPhp: _centavosToPhp(value['payoutCentavos']),
+            ),
+      ],
     );
   }
 
@@ -601,10 +778,27 @@ class SupabaseProfileRepo implements ProfileRepo {
   }
 
   @override
-  Future<void> updateAvatar(String userId, String assetUri) => _client
-      .from('profiles')
-      .update({'avatar_url': assetUri})
-      .eq('id', userId);
+  Future<String> uploadAvatar({
+    required String userId,
+    required Uint8List bytes,
+    required String contentType,
+  }) async {
+    final path = '$userId/avatar';
+    await _client.storage
+        .from('avatars')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
+        );
+    final baseUrl = _client.storage.from('avatars').getPublicUrl(path);
+    final avatarUrl = '$baseUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+    await _client
+        .from('profiles')
+        .update({'avatar_url': avatarUrl})
+        .eq('id', userId);
+    return avatarUrl;
+  }
 
   @override
   Future<void> updateIdentity({
@@ -691,6 +885,105 @@ class SupabaseSettingsRepo implements SettingsRepo {
   @override
   Future<void> deletePayoutAccount(String userId) =>
       _client.from('payout_accounts').delete().eq('user_id', userId);
+
+  @override
+  Future<LbAccountDeletionRequest?> accountDeletionRequest(
+    String userId,
+  ) async {
+    final row = await _client
+        .from('account_deletion_requests')
+        .select()
+        .eq('user_id', userId)
+        .maybeSingle();
+    return row == null ? null : _accountDeletionFromRow(row);
+  }
+
+  @override
+  Future<LbAccountDeletionRequest> requestAccountDeletion() async {
+    final response = await _client.functions.invoke(
+      'account-deletion',
+      body: {'action': 'request', 'confirmation': 'DELETE'},
+    );
+    return _accountDeletionFromRow(_functionData(response));
+  }
+
+  @override
+  Future<LbAccountDeletionRequest> cancelAccountDeletion() async {
+    final response = await _client.functions.invoke(
+      'account-deletion',
+      body: {'action': 'cancel'},
+    );
+    return _accountDeletionFromRow(_functionData(response));
+  }
+
+  LbAccountDeletionRequest _accountDeletionFromRow(Map<String, dynamic> row) {
+    final status = switch (row['status']) {
+      'under_review' => LbAccountDeletionStatus.underReview,
+      'processing' => LbAccountDeletionStatus.processing,
+      'cancelled' => LbAccountDeletionStatus.cancelled,
+      'completed' => LbAccountDeletionStatus.completed,
+      _ => LbAccountDeletionStatus.pending,
+    };
+    DateTime? optionalDate(String key) =>
+        row[key] == null ? null : DateTime.parse(row[key] as String);
+    return LbAccountDeletionRequest(
+      id: row['id'] as String,
+      userId: row['user_id'] as String,
+      status: status,
+      requestedAt: DateTime.parse(row['requested_at'] as String),
+      scheduledFor: DateTime.parse(row['scheduled_for'] as String),
+      cancelledAt: optionalDate('cancelled_at'),
+      completedAt: optionalDate('completed_at'),
+      retentionUntil: optionalDate('retention_until'),
+      reviewReason: row['review_reason'] as String?,
+    );
+  }
+}
+
+class SupabaseWalletRepo implements WalletRepo {
+  SupabaseWalletRepo(this._client);
+  final SupabaseClient _client;
+
+  @override
+  Future<LbWallet> currentWallet({int limit = 50}) async {
+    final value = await _client.rpc(
+      'get_my_wallet',
+      params: {'p_limit': limit},
+    );
+    final json = _map(value);
+    return LbWallet(
+      totalPrizeCentavos: (json['totalPrizeCentavos'] as num?)?.toInt() ?? 0,
+      totalEntryFeeCentavos:
+          (json['totalEntryFeeCentavos'] as num?)?.toInt() ?? 0,
+      netCashFlowCentavos: (json['netCashFlowCentavos'] as num?)?.toInt() ?? 0,
+      pendingPrizeCentavos:
+          (json['pendingPrizeCentavos'] as num?)?.toInt() ?? 0,
+      transactions: [
+        for (final value in (json['transactions'] as List?) ?? const [])
+          if (value is Map)
+            _walletTransactionFromJson(value.cast<String, dynamic>()),
+      ],
+    );
+  }
+
+  LbWalletTransaction _walletTransactionFromJson(Map<String, dynamic> json) {
+    final rawKind = json['kind'] as String? ?? 'entry_fee';
+    final kind = switch (rawKind) {
+      'prize' => LbWalletTransactionKind.prize,
+      'refund' => LbWalletTransactionKind.refund,
+      _ => LbWalletTransactionKind.entryFee,
+    };
+    return LbWalletTransaction(
+      id: json['id'] as String,
+      kind: kind,
+      tournamentId: json['tournamentId'] as String,
+      tournamentTitle: json['tournamentTitle'] as String,
+      amountCentavos: (json['amountCentavos'] as num).toInt(),
+      method: json['method'] as String,
+      status: json['status'] as String,
+      occurredAt: DateTime.parse(json['occurredAt'] as String),
+    );
+  }
 }
 
 class SupabaseTeamsRepo implements TeamsRepo {
@@ -744,10 +1037,66 @@ class SupabaseTeamsRepo implements TeamsRepo {
   }
 
   @override
-  Future<void> invite({required String teamId, required String userId}) {
-    throw UnsupportedError(
-      'The backend does not define a team invitation command yet.',
+  Future<void> invite({required String teamId, required String userId}) async {
+    final response = await _client.functions.invoke(
+      'team-invite',
+      body: {'teamId': teamId, 'userId': userId},
     );
+    _functionData(response);
+  }
+
+  @override
+  Future<void> inviteByUsername({
+    required String teamId,
+    required String username,
+  }) async {
+    final response = await _client.functions.invoke(
+      'team-invite',
+      body: {'teamId': teamId, 'username': username.trim()},
+    );
+    _functionData(response);
+  }
+
+  @override
+  Future<void> updateTeam({
+    required String teamId,
+    required String name,
+    required String tag,
+  }) async {
+    final response = await _client.functions.invoke(
+      'team-manage',
+      body: {
+        'teamId': teamId,
+        'action': 'update',
+        'name': name.trim(),
+        'tag': tag.trim(),
+      },
+    );
+    _functionData(response);
+  }
+
+  @override
+  Future<void> removeMember({
+    required String teamId,
+    required String userId,
+  }) async {
+    final response = await _client.functions.invoke(
+      'team-manage',
+      body: {'teamId': teamId, 'action': 'remove_member', 'userId': userId},
+    );
+    _functionData(response);
+  }
+
+  @override
+  Future<void> transferCaptain({
+    required String teamId,
+    required String userId,
+  }) async {
+    final response = await _client.functions.invoke(
+      'team-manage',
+      body: {'teamId': teamId, 'action': 'transfer_captain', 'userId': userId},
+    );
+    _functionData(response);
   }
 
   @override
@@ -765,12 +1114,16 @@ class SupabaseTeamsRepo implements TeamsRepo {
   }
 
   @override
-  Future<void> leaveTeam({required String teamId, required String userId}) =>
-      _client
-          .from('team_members')
-          .delete()
-          .eq('team_id', teamId)
-          .eq('user_id', userId);
+  Future<void> leaveTeam({
+    required String teamId,
+    required String userId,
+  }) async {
+    final response = await _client.functions.invoke(
+      'team-manage',
+      body: {'teamId': teamId, 'action': 'leave'},
+    );
+    _functionData(response);
+  }
 }
 
 class SupabasePlayersRepo implements PlayersRepo {
@@ -780,6 +1133,7 @@ class SupabasePlayersRepo implements PlayersRepo {
   @override
   Future<LbPlayerSearchPage> search({
     String? game,
+    String? username,
     Rank? minRank,
     String? region,
     bool freeAgentsOnly = false,
@@ -787,6 +1141,13 @@ class SupabasePlayersRepo implements PlayersRepo {
     int limit = 20,
   }) async {
     dynamic query = _client.from('profiles').select('*, user_rank(*)');
+    final usernameTerm = username
+        ?.trim()
+        .replaceFirst(RegExp(r'^@'), '')
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+    if (usernameTerm != null && usernameTerm.isNotEmpty) {
+      query = query.ilike('username', '%$usernameTerm%');
+    }
     if (game != null && game != 'All games') {
       query = query.contains('games', [game]);
     }
@@ -946,11 +1307,13 @@ class SupabaseNotificationsRepo implements NotificationsRepo {
 
   @override
   Future<void> respondToTeamInvite({
-    required String notificationId,
+    required String invitationId,
     required bool accept,
-  }) {
-    throw UnsupportedError(
-      'The backend does not define a team invitation command yet.',
+  }) async {
+    final response = await _client.functions.invoke(
+      'team-invite-respond',
+      body: {'invitationId': invitationId, 'accept': accept},
     );
+    _functionData(response);
   }
 }

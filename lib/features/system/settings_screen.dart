@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/data/providers.dart';
+import '../../core/notifications/push_notification_service.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/lb_card.dart';
@@ -142,6 +143,7 @@ class SettingsScreen extends ConsumerWidget {
           SlantButton(
             label: 'Sign out',
             onPressed: () async {
+              await PushNotificationService.instance.unregisterCurrentToken();
               await ref.read(authRepoProvider).signOut();
               if (!context.mounted) return;
               context.go('/onboarding');
@@ -155,7 +157,7 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           LbCard(
             padding: const EdgeInsets.all(12),
-            onTap: () => _confirmDelete(context),
+            onTap: () => context.push('/settings/delete-account'),
             child: Row(
               children: [
                 const Icon(
@@ -197,29 +199,6 @@ class SettingsScreen extends ConsumerWidget {
                 letterSpacing: 1,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _confirmDelete(BuildContext context) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: LbColors.surface,
-        title: const Text('Account deletion'),
-        content: const Text(
-          'Self-service deletion is not available yet because tournament records, disputes, and pending payouts require a server-side retention review. No data has been deleted. This flow must be completed before production release.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
           ),
         ],
       ),

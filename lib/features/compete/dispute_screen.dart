@@ -43,7 +43,8 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           .read(resultsRepoProvider)
           .openDispute(
             matchId: widget.matchId,
-            reason: '${_reason!.name}: ${_detailCtrl.text.trim()}',
+            reason: _reason!.apiValue,
+            detail: _detailCtrl.text.trim(),
           );
       if (!mounted) return;
       showDialog<void>(
@@ -77,6 +78,9 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final submission = ref.watch(
+      matchSubmissionContextProvider(widget.matchId),
+    );
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -91,55 +95,65 @@ class _DisputeScreenState extends ConsumerState<DisputeScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 4, 18, 120),
-              children: [
-                _MatchContextCard(),
-                const SizedBox(height: 14),
-                _CriticalBanner(),
-                const SizedBox(height: 14),
-                const SectionLabel('Reason'),
-                const SizedBox(height: 8),
-                for (final r in DisputeReason.values) ...[
-                  _ReasonTile(
-                    reason: r,
-                    selected: _reason == r,
-                    onTap: () => setState(() => _reason = r),
+      body: submission.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, _) => Center(
+          child: GhostButton(
+            label: 'Retry',
+            onPressed: () =>
+                ref.invalidate(matchSubmissionContextProvider(widget.matchId)),
+          ),
+        ),
+        data: (value) => Stack(
+          children: [
+            Positioned.fill(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 4, 18, 120),
+                children: [
+                  _MatchContextCard(submission: value),
+                  const SizedBox(height: 14),
+                  _CriticalBanner(),
+                  const SizedBox(height: 14),
+                  const SectionLabel('Reason'),
+                  const SizedBox(height: 8),
+                  for (final r in DisputeReason.values) ...[
+                    _ReasonTile(
+                      reason: r,
+                      selected: _reason == r,
+                      onTap: () => setState(() => _reason = r),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                  const SizedBox(height: 14),
+                  const SectionLabel('Detail', trailing: _MinLenHint()),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _detailCtrl,
+                    onChanged: (_) => setState(() {}),
+                    maxLines: 5,
+                    minLines: 4,
+                    style: LbType.body,
+                    decoration: const InputDecoration(
+                      hintText:
+                          'What happened? Timestamps, in-game screenshots, replay clips — anything the moderator needs.',
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 12),
+                  _EvidenceHint(),
                 ],
-                const SizedBox(height: 14),
-                const SectionLabel('Detail', trailing: _MinLenHint()),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _detailCtrl,
-                  onChanged: (_) => setState(() {}),
-                  maxLines: 5,
-                  minLines: 4,
-                  style: LbType.body,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'What happened? Timestamps, in-game screenshots, replay clips — anything the moderator needs.',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _EvidenceHint(),
-              ],
+              ),
             ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _SubmitCta(
-              busy: _submitting,
-              onPressed: _valid && !_submitting ? _submit : null,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _SubmitCta(
+                busy: _submitting,
+                onPressed: _valid && !_submitting ? _submit : null,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -165,18 +179,32 @@ enum DisputeReason {
   const DisputeReason(this.displayName, this.hint);
   final String displayName;
   final String hint;
+
+  String get apiValue => switch (this) {
+    DisputeReason.scoreWrong => 'score_wrong',
+    DisputeReason.noShow => 'no_show',
+    DisputeReason.cheating => 'cheating',
+    DisputeReason.technicalIssue => 'technical_issue',
+    DisputeReason.ruleViolation => 'rule_violation',
+    DisputeReason.other => 'other',
+  };
 }
 
 class _MatchContextCard extends StatelessWidget {
+  const _MatchContextCard({required this.submission});
+
+  final LbMatchSubmissionContext submission;
+
   @override
   Widget build(BuildContext context) {
+    final match = submission.match;
     return LbCard(
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'QUARTERFINAL · BEST OF 3 · SUBMITTED 4m AGO',
+            'ROUND ${match.round} · MATCH DISPUTE',
             style: LbType.metaSm.copyWith(
               color: LbColors.textDim,
               fontSize: 9.5,
@@ -186,14 +214,14 @@ class _MatchContextCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Row(
                   children: [
-                    TeamAvatar(code: 'MNL'),
-                    SizedBox(width: 8),
+                    TeamAvatar(code: submission.teamA.tag),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'Team MNL · 2',
+                        '${submission.teamA.name} · ${match.scoreA}',
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: LbColors.textPrimary,
@@ -212,13 +240,13 @@ class _MatchContextCard extends StatelessWidget {
                   fontSize: 10,
                 ),
               ),
-              const Expanded(
+              Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Flexible(
                       child: Text(
-                        '1 · Davao GG',
+                        '${match.scoreB} · ${submission.teamB.name}',
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
                         style: TextStyle(
@@ -227,8 +255,8 @@ class _MatchContextCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: 8),
-                    TeamAvatar(code: 'DVO'),
+                    const SizedBox(width: 8),
+                    TeamAvatar(code: submission.teamB.tag),
                   ],
                 ),
               ),

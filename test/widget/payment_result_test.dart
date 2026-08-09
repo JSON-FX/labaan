@@ -43,4 +43,27 @@ void main() {
     expect(find.text('NOT CHARGED'), findsOneWidget);
     expect(find.text('RETRY PAYMENT'), findsOneWidget);
   });
+
+  testWidgets('pending return refreshes to paid from the backend stream', (
+    tester,
+  ) async {
+    setPhoneViewport(tester);
+    await tester.pumpWidget(
+      hostRoute(
+        const PaymentResultScreen(
+          status: PaymentResult.pending,
+          registrationId: '123e4567-e89b-42d3-a456-426614174000',
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Processing payment'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    expect(find.text("You're in."), findsOneWidget);
+    expect(find.text('PAID · SLOT RESERVED'), findsOneWidget);
+  });
 }

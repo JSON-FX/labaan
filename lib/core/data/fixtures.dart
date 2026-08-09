@@ -312,7 +312,10 @@ class LbFixtures {
       title: 'Team invite',
       body: 'Cebu Kings invited you to join as a player.',
       createdAt: now.subtract(const Duration(hours: 1)),
-      payload: {'team_id': teamCebuKings.id},
+      payload: {
+        'invitation_id': 'a1000000-0000-0000-0000-000000000001',
+        'team_id': teamCebuKings.id,
+      },
     ),
     LbNotification(
       id: 'n_dispute',
