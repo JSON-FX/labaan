@@ -546,56 +546,49 @@ class MockSettingsRepo implements SettingsRepo {
 
 class MockWalletRepo implements WalletRepo {
   @override
-  Future<LbWallet> currentWallet({int limit = 50}) => _delay(
-    LbWallet(
-      totalPrizeCentavos: 18400,
-      totalEntryFeeCentavos: 65000,
-      netCashFlowCentavos: -46600,
-      pendingPrizeCentavos: 0,
-      transactions: [
-        LbWalletTransaction(
-          id: 'wallet_prize_1',
-          kind: LbWalletTransactionKind.prize,
-          tournamentId: 't_qc7',
-          tournamentTitle: 'QC Grind #07',
-          amountCentavos: 18400,
-          method: 'gcash',
-          status: 'completed',
-          occurredAt: LbFixtures.now.subtract(const Duration(days: 5)),
+  Future<LbWallet> currentWallet({int limit = 50, LbWalletCursor? before}) =>
+      _delay(
+        LbWallet(
+          version: 2,
+          balances: const [
+            LbWalletBalance(
+              currency: LbWalletCurrency.entryCredit,
+              displayName: 'Credits',
+              symbol: 'CR',
+              balance: 1000,
+            ),
+            LbWalletBalance(
+              currency: LbWalletCurrency.rewardPoint,
+              displayName: 'Victory Points',
+              symbol: 'VP',
+              balance: 250,
+            ),
+          ],
+          transactions: [
+            LbWalletTransaction(
+              entryId: 'wallet_entry_reward_seed',
+              id: 'wallet_reward_seed',
+              kind: LbWalletTransactionKind.adminAdjustment,
+              currency: LbWalletCurrency.rewardPoint,
+              amount: 250,
+              occurredAt: LbFixtures.now.subtract(const Duration(minutes: 1)),
+              referenceType: 'profile',
+              referenceId: LbFixtures.me.id,
+            ),
+            LbWalletTransaction(
+              entryId: 'wallet_entry_credit_seed',
+              id: 'wallet_credit_seed',
+              kind: LbWalletTransactionKind.adminAdjustment,
+              currency: LbWalletCurrency.entryCredit,
+              amount: 1000,
+              occurredAt: LbFixtures.now.subtract(const Duration(minutes: 2)),
+              referenceType: 'profile',
+              referenceId: LbFixtures.me.id,
+            ),
+          ].take(limit).toList(),
+          nextCursor: null,
         ),
-        LbWalletTransaction(
-          id: 'wallet_fee_2',
-          kind: LbWalletTransactionKind.entryFee,
-          tournamentId: 't_allstars',
-          tournamentTitle: 'All-Stars Season 3',
-          amountCentavos: -50000,
-          method: 'maya',
-          status: 'paid',
-          occurredAt: LbFixtures.now.subtract(const Duration(days: 2)),
-        ),
-        LbWalletTransaction(
-          id: 'wallet_fee_1',
-          kind: LbWalletTransactionKind.entryFee,
-          tournamentId: 't_manila',
-          tournamentTitle: 'Manila Clash #42',
-          amountCentavos: -10000,
-          method: 'gcash',
-          status: 'paid',
-          occurredAt: LbFixtures.now.subtract(const Duration(days: 3)),
-        ),
-        LbWalletTransaction(
-          id: 'wallet_fee_3',
-          kind: LbWalletTransactionKind.entryFee,
-          tournamentId: 't_qc7',
-          tournamentTitle: 'QC Grind #07',
-          amountCentavos: -5000,
-          method: 'card',
-          status: 'paid',
-          occurredAt: LbFixtures.now.subtract(const Duration(days: 10)),
-        ),
-      ].take(limit).toList(),
-    ),
-  );
+      );
 }
 
 class MockTeamsRepo implements TeamsRepo {

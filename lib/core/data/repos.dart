@@ -211,10 +211,9 @@ abstract class SettingsRepo {
   Future<LbAccountDeletionRequest> cancelAccountDeletion();
 }
 
-/// Player-owned financial activity. This is a transaction ledger, not a
-/// stored-value wallet balance.
+/// Player-owned, non-cashable wallet balances and append-only activity.
 abstract class WalletRepo {
-  Future<LbWallet> currentWallet({int limit = 50});
+  Future<LbWallet> currentWallet({int limit = 50, LbWalletCursor? before});
 }
 
 /// Team management — create, invite, roster, leave.

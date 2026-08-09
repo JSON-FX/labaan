@@ -101,7 +101,9 @@ development environment, not merely drawn as screens.
       idempotent posting, nonnegative player balances, RLS, and explicit grants
 - [x] Add pgTAP coverage, regenerate database types, and document ledger
       invariants and posting rules
-- [ ] Seed spendable development balances and expose Wallet v2 reads
+- [x] Seed spendable development balances, expose cursor-paginated Wallet v2
+      reads, and replace the Flutter cash-flow wallet with dual balances and
+      safe ledger activity
 - [ ] Replace per-registration payment with atomic Credit-funded entry/refund
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

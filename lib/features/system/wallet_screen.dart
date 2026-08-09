@@ -4,14 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
-import '../../core/domain/tournament_tier.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/lb_card.dart';
 import '../../core/widgets/section_label.dart';
-import '../../core/widgets/slant_button.dart';
 
-enum _WalletFilter { all, entryFees, prizes }
+enum _WalletFilter { all, credits, rewards }
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -96,28 +94,21 @@ class _WalletBody extends StatelessWidget {
     final visible = wallet.transactions.where((transaction) {
       return switch (filter) {
         _WalletFilter.all => true,
-        _WalletFilter.entryFees =>
-          transaction.kind == LbWalletTransactionKind.entryFee ||
-              transaction.kind == LbWalletTransactionKind.refund,
-        _WalletFilter.prizes =>
-          transaction.kind == LbWalletTransactionKind.prize,
+        _WalletFilter.credits =>
+          transaction.currency == LbWalletCurrency.entryCredit,
+        _WalletFilter.rewards =>
+          transaction.currency == LbWalletCurrency.rewardPoint,
       };
     }).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 32),
       children: [
-        _CashFlowCard(wallet: wallet),
+        _BalancesCard(wallet: wallet),
         const SizedBox(height: 12),
         Text(
-          'Activity reflects tournament charges and external payouts. It is not a stored balance.',
+          'Credits pay tournament entry fees. Victory Points are earned as rewards and can be spent in the Shop. Neither balance is cash or withdrawable.',
           style: LbType.bodyXs.copyWith(color: LbColors.textMuted),
-        ),
-        const SizedBox(height: 16),
-        SlantButton(
-          label: 'Payout destination',
-          leading: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-          onPressed: () => context.push('/settings/payout'),
         ),
         const SizedBox(height: 24),
         const SectionLabel('Transaction history'),
@@ -125,11 +116,8 @@ class _WalletBody extends StatelessWidget {
         SegmentedButton<_WalletFilter>(
           segments: const [
             ButtonSegment(value: _WalletFilter.all, label: Text('All')),
-            ButtonSegment(
-              value: _WalletFilter.entryFees,
-              label: Text('Entry fees'),
-            ),
-            ButtonSegment(value: _WalletFilter.prizes, label: Text('Prizes')),
+            ButtonSegment(value: _WalletFilter.credits, label: Text('Credits')),
+            ButtonSegment(value: _WalletFilter.rewards, label: Text('Rewards')),
           ],
           selected: {filter},
           onSelectionChanged: (selection) => onFilter(selection.first),
@@ -154,49 +142,37 @@ class _WalletBody extends StatelessWidget {
   }
 }
 
-class _CashFlowCard extends StatelessWidget {
-  const _CashFlowCard({required this.wallet});
+class _BalancesCard extends StatelessWidget {
+  const _BalancesCard({required this.wallet});
+
   final LbWallet wallet;
 
   @override
   Widget build(BuildContext context) {
-    final net = wallet.netCashFlowCentavos;
+    final credits = wallet.balanceFor(LbWalletCurrency.entryCredit);
+    final rewards = wallet.balanceFor(LbWalletCurrency.rewardPoint);
     return LbCard(
       highlighted: true,
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('NET TOURNAMENT CASH FLOW', style: LbType.sectionLabel),
-          const SizedBox(height: 7),
-          Text(
-            _signedPeso(net),
-            key: const Key('wallet-net-cash-flow'),
-            style: LbType.rankNumeral(
-              32,
-              color: net >= 0 ? LbColors.lime : LbColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 18),
+          Text('AVAILABLE BALANCES', style: LbType.sectionLabel),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: _SummaryValue(
-                  label: 'PRIZES PAID',
-                  centavos: wallet.totalPrizeCentavos,
+                child: _BalanceValue(
+                  balance: credits,
+                  icon: Icons.sports_esports_outlined,
                   color: LbColors.lime,
                 ),
               ),
+              const SizedBox(width: 14),
               Expanded(
-                child: _SummaryValue(
-                  label: 'ENTRY FEES',
-                  centavos: wallet.totalEntryFeeCentavos,
-                ),
-              ),
-              Expanded(
-                child: _SummaryValue(
-                  label: 'PENDING',
-                  centavos: wallet.pendingPrizeCentavos,
+                child: _BalanceValue(
+                  balance: rewards,
+                  icon: Icons.emoji_events_outlined,
                   color: LbColors.gold,
                 ),
               ),
@@ -208,42 +184,67 @@ class _CashFlowCard extends StatelessWidget {
   }
 }
 
-class _SummaryValue extends StatelessWidget {
-  const _SummaryValue({
-    required this.label,
-    required this.centavos,
-    this.color,
+class _BalanceValue extends StatelessWidget {
+  const _BalanceValue({
+    required this.balance,
+    required this.icon,
+    required this.color,
   });
-  final String label;
-  final int centavos;
-  final Color? color;
+
+  final LbWalletBalance balance;
+  final IconData icon;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(label, style: LbType.metaSm),
-      const SizedBox(height: 5),
-      Text(
-        _peso(centavos),
-        style: LbType.money.copyWith(color: color ?? LbColors.textPrimary),
-      ),
-    ],
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      border: Border.all(color: color.withValues(alpha: 0.28)),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 12),
+        Text(
+          '${_wholeUnits(balance.balance)} ${balance.symbol}',
+          key: Key('wallet-balance-${balance.currency.name}'),
+          style: LbType.rankNumeral(25, color: color),
+        ),
+        const SizedBox(height: 4),
+        Text(balance.displayName.toUpperCase(), style: LbType.metaSm),
+      ],
+    ),
   );
 }
 
 class _TransactionRow extends StatelessWidget {
   const _TransactionRow({required this.transaction});
+
   final LbWalletTransaction transaction;
 
   @override
   Widget build(BuildContext context) {
     final incoming = transaction.isIncoming;
     final label = switch (transaction.kind) {
+      LbWalletTransactionKind.topup => 'TOP UP',
       LbWalletTransactionKind.entryFee => 'ENTRY FEE',
-      LbWalletTransactionKind.prize => 'PRIZE PAYOUT',
-      LbWalletTransactionKind.refund => 'REFUND',
+      LbWalletTransactionKind.entryRefund => 'ENTRY REFUND',
+      LbWalletTransactionKind.providerReversal => 'PAYMENT REVERSAL',
+      LbWalletTransactionKind.rewardAllocation => 'PRIZE POOL',
+      LbWalletTransactionKind.rewardGrant => 'REWARD',
+      LbWalletTransactionKind.shopPurchase => 'SHOP PURCHASE',
+      LbWalletTransactionKind.shopRefund => 'SHOP REFUND',
+      LbWalletTransactionKind.adminAdjustment => 'BALANCE ADJUSTMENT',
     };
+    final symbol = transaction.currency == LbWalletCurrency.entryCredit
+        ? 'CR'
+        : 'VP';
+    final currencyName = transaction.currency == LbWalletCurrency.entryCredit
+        ? 'Credits'
+        : 'Victory Points';
     return LbCard(
       child: Row(
         children: [
@@ -267,25 +268,18 @@ class _TransactionRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  transaction.tournamentTitle,
-                  style: LbType.cardTitleSm,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(label, style: LbType.cardTitleSm),
                 const SizedBox(height: 3),
                 Text(
-                  '$label · ${transaction.method.toUpperCase()} · ${transaction.status.toUpperCase()}',
+                  '$currencyName · ${_shortDate(transaction.occurredAt)}',
                   style: LbType.metaSm,
                 ),
-                const SizedBox(height: 2),
-                Text(_shortDate(transaction.occurredAt), style: LbType.bodyXs),
               ],
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            _signedPeso(transaction.amountCentavos),
+            '${incoming ? '+' : '-'}${_wholeUnits(transaction.amount.abs())} $symbol',
             style: LbType.money.copyWith(
               color: incoming ? LbColors.lime : LbColors.textPrimary,
             ),
@@ -296,15 +290,14 @@ class _TransactionRow extends StatelessWidget {
   }
 }
 
-String _peso(int centavos) => formatPeso(centavos / 100, decimals: 2);
-
-String _signedPeso(int centavos) {
-  final sign = centavos > 0
-      ? '+'
-      : centavos < 0
-      ? '-'
-      : '';
-  return '$sign${_peso(centavos.abs())}';
+String _wholeUnits(int value) {
+  final digits = value.abs().toString();
+  final output = StringBuffer();
+  for (var index = 0; index < digits.length; index++) {
+    if (index > 0 && (digits.length - index) % 3 == 0) output.write(',');
+    output.write(digits[index]);
+  }
+  return '${value < 0 ? '-' : ''}$output';
 }
 
 String _shortDate(DateTime value) {

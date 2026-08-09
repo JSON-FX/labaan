@@ -217,14 +217,15 @@ Requirements:
 - [x] Add explicit Data API grants only where required; RLS and API exposure
       are separate controls.
 - [x] Run Supabase database advisors before finalizing migrations.
-- [ ] Regenerate and reconcile database types, contracts, API docs, and tests.
+- [x] Regenerate and reconcile database types, contracts, API docs, and tests.
 
 ### Read APIs
 
-- [ ] Replace the current cash-flow `get_my_wallet` response with Wallet v2.
-- [ ] Return both balances, safe pending states, and paginated activity.
-- [ ] Include currency and transaction type on every activity entry.
-- [ ] Never return webhook payloads, full provider details, or another user's
+- [x] Replace the current cash-flow `get_my_wallet` response with Wallet v2.
+- [ ] Add safe provider pending-state summaries when top-ups exist.
+- [x] Return both balances and cursor-paginated settled activity.
+- [x] Include currency and transaction type on every activity entry.
+- [x] Never return webhook payloads, full provider details, or another user's
       financial activity.
 
 ### Command APIs
@@ -289,16 +290,16 @@ depending on production provider approval.
 ### Phase 1 - Smallest vertical slice: seeded Credits to registration
 
 - [x] Create wallet ledger migrations and pgTAP tests.
-- [ ] Seed development Credit and Victory Point accounts.
-- [ ] Implement authenticated wallet summary/history reads.
+- [x] Seed development Credit and Victory Point accounts.
+- [x] Implement authenticated wallet summary/history reads.
 - [ ] Implement atomic Credit-funded tournament registration.
 - [ ] Implement Credit refunds for cancellation.
 - [x] Update generated backend types and contracts.
-- [ ] Update Flutter models and repositories.
+- [x] Update Flutter models and repositories.
 - [ ] Replace the payment-method registration UI with balance, cost, and
       post-entry balance.
 - [ ] Show insufficient-balance handling without a real top-up provider.
-- [ ] Update Flutter wallet UI to show both balances and ledger activity.
+- [x] Update Flutter wallet UI to show both balances and ledger activity.
 
 Exit criteria: a seeded development user can enter a tournament exactly once,
 Credits cannot be double-spent, cancellation restores Credits, and the Flutter

@@ -945,45 +945,85 @@ class SupabaseWalletRepo implements WalletRepo {
   final SupabaseClient _client;
 
   @override
-  Future<LbWallet> currentWallet({int limit = 50}) async {
+  Future<LbWallet> currentWallet({
+    int limit = 50,
+    LbWalletCursor? before,
+  }) async {
     final value = await _client.rpc(
       'get_my_wallet',
-      params: {'p_limit': limit},
+      params: {
+        'p_limit': limit,
+        'p_before_created_at': before?.createdAt.toUtc().toIso8601String(),
+        'p_before_entry_id': before?.entryId,
+      },
     );
     final json = _map(value);
+    final version = (json['version'] as num?)?.toInt();
+    if (version != 2) {
+      throw FormatException('Unsupported wallet response version: $version');
+    }
     return LbWallet(
-      totalPrizeCentavos: (json['totalPrizeCentavos'] as num?)?.toInt() ?? 0,
-      totalEntryFeeCentavos:
-          (json['totalEntryFeeCentavos'] as num?)?.toInt() ?? 0,
-      netCashFlowCentavos: (json['netCashFlowCentavos'] as num?)?.toInt() ?? 0,
-      pendingPrizeCentavos:
-          (json['pendingPrizeCentavos'] as num?)?.toInt() ?? 0,
+      version: version!,
+      balances: [
+        for (final value in (json['balances'] as List?) ?? const [])
+          if (value is Map)
+            _walletBalanceFromJson(value.cast<String, dynamic>()),
+      ],
       transactions: [
         for (final value in (json['transactions'] as List?) ?? const [])
           if (value is Map)
             _walletTransactionFromJson(value.cast<String, dynamic>()),
       ],
+      nextCursor: switch (json['nextCursor']) {
+        final Map value => LbWalletCursor(
+          createdAt: DateTime.parse(value['createdAt'] as String),
+          entryId: value['entryId'] as String,
+        ),
+        _ => null,
+      },
     );
   }
 
+  LbWalletBalance _walletBalanceFromJson(Map<String, dynamic> json) =>
+      LbWalletBalance(
+        currency: _walletCurrency(json['currencyCode'] as String),
+        displayName: json['displayName'] as String,
+        symbol: json['symbol'] as String,
+        balance: (json['balance'] as num).toInt(),
+      );
+
   LbWalletTransaction _walletTransactionFromJson(Map<String, dynamic> json) {
-    final rawKind = json['kind'] as String? ?? 'entry_fee';
-    final kind = switch (rawKind) {
-      'prize' => LbWalletTransactionKind.prize,
-      'refund' => LbWalletTransactionKind.refund,
-      _ => LbWalletTransactionKind.entryFee,
+    final kind = switch (json['transactionType'] as String) {
+      'topup' => LbWalletTransactionKind.topup,
+      'entry_fee' => LbWalletTransactionKind.entryFee,
+      'entry_refund' => LbWalletTransactionKind.entryRefund,
+      'provider_reversal' => LbWalletTransactionKind.providerReversal,
+      'reward_allocation' => LbWalletTransactionKind.rewardAllocation,
+      'reward_grant' => LbWalletTransactionKind.rewardGrant,
+      'shop_purchase' => LbWalletTransactionKind.shopPurchase,
+      'shop_refund' => LbWalletTransactionKind.shopRefund,
+      'admin_adjustment' => LbWalletTransactionKind.adminAdjustment,
+      final value => throw FormatException(
+        'Unsupported wallet transaction type: $value',
+      ),
     };
     return LbWalletTransaction(
+      entryId: json['entryId'] as String,
       id: json['id'] as String,
       kind: kind,
-      tournamentId: json['tournamentId'] as String,
-      tournamentTitle: json['tournamentTitle'] as String,
-      amountCentavos: (json['amountCentavos'] as num).toInt(),
-      method: json['method'] as String,
-      status: json['status'] as String,
+      currency: _walletCurrency(json['currencyCode'] as String),
+      amount: (json['amount'] as num).toInt(),
       occurredAt: DateTime.parse(json['occurredAt'] as String),
+      referenceType: json['referenceType'] as String?,
+      referenceId: json['referenceId'] as String?,
     );
   }
+
+  LbWalletCurrency _walletCurrency(String code) => switch (code) {
+    'entry_credit' => LbWalletCurrency.entryCredit,
+    'reward_point' => LbWalletCurrency.rewardPoint,
+    _ => throw FormatException('Unsupported wallet currency: $code'),
+  };
 }
 
 class SupabaseTeamsRepo implements TeamsRepo {

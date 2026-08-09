@@ -442,50 +442,95 @@ class LbAccountDeletionRequest {
       status == LbAccountDeletionStatus.underReview;
 }
 
-enum LbWalletTransactionKind { entryFee, prize, refund }
+enum LbWalletCurrency { entryCredit, rewardPoint }
+
+enum LbWalletTransactionKind {
+  topup,
+  entryFee,
+  entryRefund,
+  providerReversal,
+  rewardAllocation,
+  rewardGrant,
+  shopPurchase,
+  shopRefund,
+  adminAdjustment,
+}
+
+@immutable
+class LbWalletBalance {
+  const LbWalletBalance({
+    required this.currency,
+    required this.displayName,
+    required this.symbol,
+    required this.balance,
+  });
+
+  final LbWalletCurrency currency;
+  final String displayName;
+  final String symbol;
+  final int balance;
+}
+
+@immutable
+class LbWalletCursor {
+  const LbWalletCursor({required this.createdAt, required this.entryId});
+
+  final DateTime createdAt;
+  final String entryId;
+}
 
 @immutable
 class LbWalletTransaction {
   const LbWalletTransaction({
+    required this.entryId,
     required this.id,
     required this.kind,
-    required this.tournamentId,
-    required this.tournamentTitle,
-    required this.amountCentavos,
-    required this.method,
-    required this.status,
+    required this.currency,
+    required this.amount,
     required this.occurredAt,
+    this.referenceType,
+    this.referenceId,
   });
 
+  final String entryId;
   final String id;
   final LbWalletTransactionKind kind;
-  final String tournamentId;
-  final String tournamentTitle;
+  final LbWalletCurrency currency;
 
-  /// Signed cash movement. Entry fees are negative; prizes/refunds positive.
-  final int amountCentavos;
-  final String method;
-  final String status;
+  /// Signed wallet-unit movement from the player's perspective.
+  final int amount;
   final DateTime occurredAt;
+  final String? referenceType;
+  final String? referenceId;
 
-  bool get isIncoming => amountCentavos > 0;
+  bool get isIncoming => amount > 0;
 }
 
 @immutable
 class LbWallet {
   const LbWallet({
-    required this.totalPrizeCentavos,
-    required this.totalEntryFeeCentavos,
-    required this.netCashFlowCentavos,
-    required this.pendingPrizeCentavos,
+    required this.version,
+    required this.balances,
     required this.transactions,
+    this.nextCursor,
   });
 
-  final int totalPrizeCentavos;
-  final int totalEntryFeeCentavos;
-  final int netCashFlowCentavos;
-  final int pendingPrizeCentavos;
+  final int version;
+  final List<LbWalletBalance> balances;
   final List<LbWalletTransaction> transactions;
+  final LbWalletCursor? nextCursor;
+
+  LbWalletBalance balanceFor(LbWalletCurrency currency) => balances.firstWhere(
+    (balance) => balance.currency == currency,
+    orElse: () => LbWalletBalance(
+      currency: currency,
+      displayName: currency == LbWalletCurrency.entryCredit
+          ? 'Credits'
+          : 'Victory Points',
+      symbol: currency == LbWalletCurrency.entryCredit ? 'CR' : 'VP',
+      balance: 0,
+    ),
+  );
 }
 
 @immutable
