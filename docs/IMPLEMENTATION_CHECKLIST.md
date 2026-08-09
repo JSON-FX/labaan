@@ -117,5 +117,8 @@ development environment, not merely drawn as screens.
       freeze active paid rosters, and allocate the locked Victory Point pool to
       verified placement teams exactly once with deterministic tie and rounding
       rules; player wallet grants remain the next reward slice
+- [x] Split verified team allocations equally across locked rosters, reject
+      cross-team eligibility overlap, post exact balanced Victory Point grants
+      once per player, and expose those rewards in Wallet activity
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending

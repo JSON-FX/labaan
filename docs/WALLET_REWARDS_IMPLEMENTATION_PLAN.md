@@ -74,7 +74,7 @@ Store product identifiers because the brand and display terminology may change.
 - [ ] Victory Points are issued only by a verified tournament result,
       platform promotion, sponsor allocation, or audited admin adjustment.
 - [ ] Shop refunds restore Victory Points through a compensating transaction.
-- [ ] Every tournament award is idempotent per tournament, placement, and user.
+- [x] Every tournament award is idempotent per tournament, placement, and user.
 
 ### Tournament rules
 
@@ -153,8 +153,9 @@ Streamer -> Host web portal -> PayMongo -> Labaan
 - [x] Ensure integer rounding produces exactly the locked total; assign the
       division remainder to first place and roll an unavailable third-place
       bucket into first place.
-- [ ] Define team distribution. Recommended: snapshot the eligible roster when
-      the tournament locks and distribute deterministically among that roster.
+- [x] Split each team allocation equally across its locked eligible roster;
+      assign indivisible remainder units to the locked captain first, then
+      remaining members by stable user ID.
 - [ ] Define how disqualified, removed, substituted, or banned players affect
       eligibility.
 - [ ] Display the locked total and distribution before the tournament starts.
@@ -316,9 +317,10 @@ wallet shows the authoritative results.
 - [x] Calculate and lock the final reward pool at registration close.
 - [x] Implement idempotent placement/team reward allocation from verified
       bracket topology and immutable team/roster snapshots.
-- [ ] Issue Victory Points only after verified tournament completion.
+- [x] Issue Victory Points only after verified tournament completion through
+      balanced, immutable, idempotent per-player ledger grants.
 - [ ] Replace cash-payout notifications and profile aggregates.
-- [ ] Add reward history to Wallet v2.
+- [x] Add reward-grant activity to Wallet v2 history and Flutter presentation.
 
 Exit criteria: retrying completion cannot duplicate rewards, the awarded total
 equals the locked pool, and every recipient is derived from the locked eligible
@@ -419,7 +421,7 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 - [x] Below-minimum tournament -> cancellation and exact Credit refunds.
 - [x] Entry-scaled pool -> final pool based only on confirmed entrants.
 - [ ] Streamer sponsor payment -> locked allocation -> winner awards.
-- [ ] Duplicate tournament-completion event -> no duplicate Victory Points.
+- [x] Duplicate tournament-completion event -> no duplicate Victory Points.
 - [ ] PayMongo payment -> duplicate webhooks -> one Credit grant.
 - [ ] Android/web PayMongo top-up -> iOS login -> balance available -> entry.
 - [ ] Apple sandbox top-up -> Android/web login -> balance available -> entry.

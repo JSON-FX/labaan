@@ -18,6 +18,16 @@ class MockWalletState {
   MockWalletState()
     : transactions = [
         LbWalletTransaction(
+          entryId: 'wallet_entry_tournament_reward',
+          id: 'wallet_tournament_reward',
+          kind: LbWalletTransactionKind.rewardGrant,
+          currency: LbWalletCurrency.rewardPoint,
+          amount: 18,
+          occurredAt: LbFixtures.now.subtract(const Duration(seconds: 30)),
+          referenceType: 'tournament_reward_grant',
+          referenceId: 'reward_grant_wallet_test_cup',
+        ),
+        LbWalletTransaction(
           entryId: 'wallet_entry_reward_seed',
           id: 'wallet_reward_seed',
           kind: LbWalletTransactionKind.adminAdjustment,
@@ -40,7 +50,7 @@ class MockWalletState {
       ];
 
   int entryCreditBalance = 1000;
-  int rewardPointBalance = 250;
+  int rewardPointBalance = 268;
   final List<LbWalletTransaction> transactions;
   final Map<String, LbRegistration> registrations = {};
   final Map<String, String> entryKeys = {};

@@ -13,15 +13,17 @@ void main() {
 
     expect(find.text('Wallet'), findsOneWidget);
     expect(find.text('1,000 CR'), findsOneWidget);
-    expect(find.text('250 VP'), findsOneWidget);
+    expect(find.text('268 VP'), findsOneWidget);
     expect(find.text('CREDITS'), findsOneWidget);
     expect(find.text('VICTORY POINTS'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('// TRANSACTION HISTORY'), 300);
     await tester.pump();
     expect(find.text('// TRANSACTION HISTORY'), findsOneWidget);
     expect(find.text('BALANCE ADJUSTMENT'), findsNWidgets(2));
+    expect(find.text('REWARD'), findsOneWidget);
     expect(find.text('+1,000 CR'), findsOneWidget);
     expect(find.text('+250 VP'), findsOneWidget);
+    expect(find.text('+18 VP'), findsOneWidget);
     expect(find.textContaining('Neither balance is cash'), findsOneWidget);
     expect(find.text('Payout destination'), findsNothing);
   });
@@ -37,6 +39,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('+250 VP'), findsOneWidget);
+    expect(find.text('+18 VP'), findsOneWidget);
     expect(find.text('+1,000 CR'), findsNothing);
   });
 }
