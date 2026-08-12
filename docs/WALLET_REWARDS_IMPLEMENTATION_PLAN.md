@@ -345,7 +345,9 @@ roster and verified result.
 - [x] Credit only after the stored signed paid Payment matches the immutable
       order amount/currency; settle order, receipt, and one balanced Credit
       grant atomically with exact- and sibling-event idempotency.
-- [ ] Handle pending, failure, expiry, refund, reversal, and duplicate capture.
+- [x] Handle pending, failure, expiry, refund, compensating reversal, and
+      duplicate capture; partial/underfunded reversals enter review and freeze
+      purchased-Credit spending without falsifying ledger value.
 - [ ] Reuse the Flutter in-app checkout and native-wallet fallback on direct
       Android; add web checkout behavior.
 - [ ] Refresh the wallet after redirect without trusting redirect status.
@@ -435,10 +437,10 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 - [x] Entry-scaled pool -> final pool based only on confirmed entrants.
 - [ ] Streamer sponsor payment -> locked allocation -> winner awards.
 - [x] Duplicate tournament-completion event -> no duplicate Victory Points.
-- [ ] PayMongo payment -> duplicate webhooks -> one Credit grant.
+- [x] PayMongo payment -> duplicate webhooks -> one Credit grant.
 - [ ] Android/web PayMongo top-up -> iOS login -> balance available -> entry.
 - [ ] Apple sandbox top-up -> Android/web login -> balance available -> entry.
-- [ ] Provider refund after partial spend -> deterministic reversal/review state.
+- [x] Provider refund after partial spend -> deterministic reversal/review state.
 - [ ] Victory Point Shop order -> inventory reservation -> fulfillment.
 - [ ] Shop cancellation/refund -> compensating Victory Point credit.
 - [ ] Unauthorized client attempts direct balance/ledger changes -> denied.

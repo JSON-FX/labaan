@@ -140,5 +140,8 @@ development environment, not merely drawn as screens.
       Credit grant; exact retries and same-payment sibling events reuse the
       original wallet transaction, while mismatched economics or payment IDs
       cannot issue value
+- [x] Apply PayMongo failure, expiry, and refund lifecycle events atomically;
+      full refunds post one compensating Credit reversal, while duplicate,
+      partial, and spent-balance cases enter review and freeze Credit spending
 - [ ] Add PayMongo Credit top-ups and Apple IAP verification
 - [ ] Add tournament Victory Point rewards and Shop spending
