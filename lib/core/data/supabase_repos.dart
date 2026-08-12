@@ -1173,6 +1173,43 @@ class SupabaseWalletRepo implements WalletRepo {
     return [for (final row in rows) _creditPackFromRow(row)];
   }
 
+  @override
+  Future<LbTopupCheckout> createPaymongoTopup({
+    required LbCreditPack pack,
+    required PayMethod method,
+    required CreditPackPlatform platform,
+    required String idempotencyKey,
+    required Uri successUrl,
+    required Uri cancelUrl,
+  }) async {
+    final response = await _client.functions.invoke(
+      'topups-create-checkout',
+      headers: {'Idempotency-Key': idempotencyKey},
+      body: {
+        'packId': pack.id,
+        'method': method.name,
+        'platform': platform.snake,
+        'idempotencyKey': idempotencyKey,
+        'successUrl': successUrl.toString(),
+        'cancelUrl': cancelUrl.toString(),
+      },
+    );
+    final data = _functionData(response);
+    final order = _map(data['order']);
+    final checkoutUrl = Uri.tryParse(data['checkoutUrl']?.toString() ?? '');
+    if (checkoutUrl == null ||
+        checkoutUrl.scheme != 'https' ||
+        checkoutUrl.host != 'checkout.paymongo.com') {
+      throw const FormatException('Backend returned an invalid checkout URL');
+    }
+    return LbTopupCheckout(
+      orderId: order['id'] as String,
+      checkoutUrl: checkoutUrl,
+      creditAmount: (order['credit_amount'] as num).toInt(),
+      priceCentavos: (order['price_centavos'] as num).toInt(),
+    );
+  }
+
   LbCreditPack _creditPackFromRow(Map<String, dynamic> row) => LbCreditPack(
     id: row['id'] as String,
     packCode: row['pack_code'] as String,

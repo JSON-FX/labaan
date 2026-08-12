@@ -564,6 +564,25 @@ class LbCreditPack {
   double get pricePhp => priceCentavos / 100;
 }
 
+/// A server-created PayMongo checkout for one immutable Credit-pack order.
+///
+/// The redirect is never proof of payment. Credits become available only
+/// after the signed provider webhook settles the order on the backend.
+@immutable
+class LbTopupCheckout {
+  const LbTopupCheckout({
+    required this.orderId,
+    required this.checkoutUrl,
+    required this.creditAmount,
+    required this.priceCentavos,
+  });
+
+  final String orderId;
+  final Uri checkoutUrl;
+  final int creditAmount;
+  final int priceCentavos;
+}
+
 enum LbWalletTransactionKind {
   topup,
   entryFee,

@@ -58,10 +58,10 @@ Store product identifiers because the brand and display terminology may change.
 - [x] Credits never expire.
 - [x] Credits cannot be withdrawn or transferred.
 - [x] Credits cannot be converted into Victory Points.
-- [ ] Credits are credited only after an authoritative provider confirmation.
+- [x] Credits are credited only after an authoritative provider confirmation.
 - [x] Tournament cancellation returns Credits through a compensating ledger
       transaction rather than editing the original debit.
-- [ ] Provider refunds and reversals remove the corresponding Credits through a
+- [x] Provider refunds and reversals remove the corresponding Credits through a
       new ledger transaction and create a review state if the balance is short.
 - [ ] Promotional Credits, if introduced, are source-tagged and follow an
       explicit refund and expiration policy separate from purchased Credits.
@@ -348,9 +348,9 @@ roster and verified result.
 - [x] Handle pending, failure, expiry, refund, compensating reversal, and
       duplicate capture; partial/underfunded reversals enter review and freeze
       purchased-Credit spending without falsifying ledger value.
-- [ ] Reuse the Flutter in-app checkout and native-wallet fallback on direct
+- [x] Reuse the Flutter in-app checkout and native-wallet fallback on direct
       Android; add web checkout behavior.
-- [ ] Refresh the wallet after redirect without trusting redirect status.
+- [x] Refresh the wallet after redirect without trusting redirect status.
 - [ ] Add reconciliation and audit views for admins.
 
 Exit criteria: one PayMongo test payment creates exactly one Credit grant even

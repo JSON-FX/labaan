@@ -233,6 +233,15 @@ abstract class WalletRepo {
     required CreditPackProvider provider,
     required CreditPackPlatform platform,
   });
+
+  Future<LbTopupCheckout> createPaymongoTopup({
+    required LbCreditPack pack,
+    required PayMethod method,
+    required CreditPackPlatform platform,
+    required String idempotencyKey,
+    required Uri successUrl,
+    required Uri cancelUrl,
+  });
 }
 
 /// Team management — create, invite, roster, leave.

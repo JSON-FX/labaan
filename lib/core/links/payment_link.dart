@@ -14,6 +14,15 @@ String? paymentLocationFromUri(Uri uri) {
     return null;
   }
 
+  final purpose = uri.queryParameters['purpose'];
+  if (purpose == 'credit_topup' && uri.queryParameters.length == 1) {
+    return switch (uri.pathSegments.single.toLowerCase()) {
+      'success' => '/wallet?topupResult=pending',
+      'cancel' => '/wallet?topupResult=cancelled',
+      _ => null,
+    };
+  }
+
   final registrationId = uri.queryParameters['registrationId'];
   final tournamentId = uri.queryParameters['tournamentId'];
   if (registrationId == null ||

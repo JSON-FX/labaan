@@ -35,6 +35,21 @@ void main() {
     );
   });
 
+  test('top-up returns refresh the wallet without claiming payment', () {
+    expect(
+      paymentLocationFromUri(
+        Uri.parse('labaan://payment/success?purpose=credit_topup'),
+      ),
+      '/wallet?topupResult=pending',
+    );
+    expect(
+      paymentLocationFromUri(
+        Uri.parse('labaan://payment/cancel?purpose=credit_topup'),
+      ),
+      '/wallet?topupResult=cancelled',
+    );
+  });
+
   test('rejects malformed, unrelated, and over-specified return links', () {
     expect(
       paymentLocationFromUri(Uri.parse('https://payment/success')),
@@ -54,6 +69,14 @@ void main() {
         Uri.parse(
           'labaan://payment/success?registrationId=$registrationId&'
           'tournamentId=$tournamentId&next=/settings',
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      paymentLocationFromUri(
+        Uri.parse(
+          'labaan://payment/success?purpose=credit_topup&next=/settings',
         ),
       ),
       isNull,

@@ -1,6 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
@@ -8,11 +12,16 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/lb_card.dart';
 import '../../core/widgets/section_label.dart';
+import '../../core/widgets/slant_button.dart';
+import '../registration/payment_checkout_screen.dart';
+import 'credit_topup_sheet.dart';
 
 enum _WalletFilter { all, credits, rewards }
 
 class WalletScreen extends ConsumerStatefulWidget {
-  const WalletScreen({super.key});
+  const WalletScreen({this.topupResult, super.key});
+
+  final String? topupResult;
 
   @override
   ConsumerState<WalletScreen> createState() => _WalletScreenState();
@@ -22,8 +31,80 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   _WalletFilter _filter = _WalletFilter.all;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.topupResult != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _handleTopupReturn());
+    }
+  }
+
+  Future<void> _handleTopupReturn() async {
+    if (!mounted) return;
+    final pending = widget.topupResult == 'pending';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          pending
+              ? 'Payment received. Waiting for PayMongo confirmation.'
+              : 'Top-up checkout was cancelled.',
+        ),
+      ),
+    );
+    if (!pending) return;
+
+    // The return URL is navigation only. Poll the authoritative wallet while
+    // the signed webhook finishes, without ever granting value client-side.
+    for (var attempt = 0; attempt < 5 && mounted; attempt++) {
+      ref.invalidate(walletProvider);
+      try {
+        await ref.read(walletProvider.future);
+      } catch (_) {
+        // Pull-to-refresh remains available if a transient read fails.
+      }
+      if (attempt < 4) await Future<void>.delayed(const Duration(seconds: 1));
+    }
+  }
+
+  Future<void> _openTopup(CreditPackPlatform platform) async {
+    final checkout = await showModalBottomSheet<LbTopupCheckout>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: LbColors.surface,
+      builder: (_) => CreditTopupSheet(platform: platform),
+    );
+    if (checkout == null || !mounted) return;
+
+    if (kIsWeb) {
+      final opened = await launchUrl(
+        checkout.checkoutUrl,
+        webOnlyWindowName: '_self',
+      );
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open PayMongo Checkout.')),
+        );
+      }
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) =>
+            PaymentCheckoutScreen(checkoutUrl: checkout.checkoutUrl),
+      ),
+    );
+    if (!mounted) return;
+    ref.invalidate(walletProvider);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletProvider);
+    final topupPlatform = paymongoTopupPlatform(
+      isWeb: kIsWeb,
+      targetPlatform: defaultTargetPlatform,
+    );
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -71,6 +152,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             wallet: data,
             filter: _filter,
             onFilter: (value) => setState(() => _filter = value),
+            onTopup: topupPlatform == null
+                ? null
+                : () => unawaited(_openTopup(topupPlatform)),
           ),
         ),
       ),
@@ -83,11 +167,13 @@ class _WalletBody extends StatelessWidget {
     required this.wallet,
     required this.filter,
     required this.onFilter,
+    required this.onTopup,
   });
 
   final LbWallet wallet;
   final _WalletFilter filter;
   final ValueChanged<_WalletFilter> onFilter;
+  final VoidCallback? onTopup;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +191,14 @@ class _WalletBody extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 32),
       children: [
         _BalancesCard(wallet: wallet),
+        if (onTopup != null) ...[
+          const SizedBox(height: 12),
+          SlantButton(
+            label: 'Top up Credits',
+            onPressed: onTopup,
+            leading: const Icon(Icons.add_circle_outline, size: 18),
+          ),
+        ],
         const SizedBox(height: 12),
         Text(
           'Credits pay tournament entry fees. Victory Points are earned as rewards and can be spent in the Shop. Neither balance is cash or withdrawable.',

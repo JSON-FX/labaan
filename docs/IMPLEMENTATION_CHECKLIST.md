@@ -143,5 +143,8 @@ development environment, not merely drawn as screens.
 - [x] Apply PayMongo failure, expiry, and refund lifecycle events atomically;
       full refunds post one compensating Credit reversal, while duplicate,
       partial, and spent-balance cases enter review and freeze Credit spending
-- [ ] Add PayMongo Credit top-ups and Apple IAP verification
+- [x] Add server-priced PayMongo Credit top-ups for direct Android and web,
+      with iOS-hidden entry points, in-app/native-wallet checkout fallback,
+      same-tab web checkout, safe app links, and authoritative wallet refresh
+- [ ] Add Apple IAP purchase and server verification for iOS Credits
 - [ ] Add tournament Victory Point rewards and Shop spending

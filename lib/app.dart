@@ -115,7 +115,12 @@ class LabaanApp extends StatelessWidget {
           path: '/notifications',
           builder: (_, _) => const NotificationsScreen(),
         ),
-        GoRoute(path: '/wallet', builder: (_, _) => const WalletScreen()),
+        GoRoute(
+          path: '/wallet',
+          builder: (_, state) => WalletScreen(
+            topupResult: state.uri.queryParameters['topupResult'],
+          ),
+        ),
         GoRoute(path: '/host', builder: (_, _) => const HostTournamentScreen()),
         GoRoute(
           path: '/support',

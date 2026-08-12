@@ -34,6 +34,15 @@ void main() {
     );
   });
 
+  test('converts a Credit top-up return into a wallet refresh location', () {
+    final navigation = classifyCheckoutNavigation(
+      Uri.parse('labaan://payment/success?purpose=credit_topup'),
+    );
+
+    expect(navigation.kind, CheckoutNavigationKind.appReturn);
+    expect(navigation.appLocation, '/wallet?topupResult=pending');
+  });
+
   test('hands native wallet schemes to the operating system', () {
     expect(
       classifyCheckoutNavigation(Uri.parse('gcash://pay/example')).kind,

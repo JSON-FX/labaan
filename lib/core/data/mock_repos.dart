@@ -775,6 +775,24 @@ class MockWalletRepo implements WalletRepo {
     for (final pack in _developmentCreditPacks)
       if (pack.provider == provider && pack.platform == platform) pack,
   ]);
+
+  @override
+  Future<LbTopupCheckout> createPaymongoTopup({
+    required LbCreditPack pack,
+    required PayMethod method,
+    required CreditPackPlatform platform,
+    required String idempotencyKey,
+    required Uri successUrl,
+    required Uri cancelUrl,
+  }) => _delay(
+    LbTopupCheckout(
+      orderId: 'mock-topup-${pack.packCode}',
+      checkoutUrl: Uri.parse('https://checkout.paymongo.com/mock-topup'),
+      creditAmount: pack.creditAmount,
+      priceCentavos: pack.priceCentavos,
+    ),
+    _kWriteLatency,
+  );
 }
 
 final _developmentCreditPacks = [
