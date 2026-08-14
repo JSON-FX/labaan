@@ -80,6 +80,18 @@ final walletRepoProvider = Provider<WalletRepo>(
       : MockWalletRepo(ref.watch(mockWalletStateProvider)),
 );
 
+final hostSponsorRepoProvider = Provider<HostSponsorRepo>(
+  (ref) => ref.watch(backendEnabledProvider)
+      ? SupabaseHostSponsorRepo(Lb.client)
+      : MockHostSponsorRepo(),
+);
+
+final shopRepoProvider = Provider<ShopRepo>(
+  (ref) => ref.watch(backendEnabledProvider)
+      ? SupabaseShopRepo(Lb.client)
+      : MockShopRepo(ref.watch(mockWalletStateProvider)),
+);
+
 final teamsRepoProvider = Provider<TeamsRepo>(
   (ref) => ref.watch(backendEnabledProvider)
       ? SupabaseTeamsRepo(Lb.client)
@@ -140,6 +152,20 @@ final tournamentByIdProvider = FutureProvider.autoDispose
     .family<LbTournament, String>((ref, id) {
       return ref.watch(tournamentsRepoProvider).byId(id);
     });
+
+final hostSponsorPortalProvider = FutureProvider.autoDispose
+    .family<LbHostSponsorPortal, String>((ref, organizerId) {
+      return ref.watch(hostSponsorRepoProvider).portalForOrganizer(organizerId);
+    });
+
+final shopCatalogProvider = FutureProvider.autoDispose
+    .family<List<LbShopProduct>, ShopPlatform>((ref, platform) {
+      return ref.watch(shopRepoProvider).catalog(platform);
+    });
+
+final shopOrdersProvider = FutureProvider.autoDispose<List<LbShopOrder>>((ref) {
+  return ref.watch(shopRepoProvider).orders();
+});
 
 final bracketProvider = StreamProvider.autoDispose.family<LbBracket, String>((
   ref,

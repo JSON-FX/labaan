@@ -839,6 +839,158 @@ final _developmentCreditPacks = [
   ],
 ];
 
+class MockHostSponsorRepo implements HostSponsorRepo {
+  static const _packages = [
+    LbSponsorPackage(
+      id: 'sponsor_starter_v1',
+      packageCode: 'starter_boost',
+      displayName: 'Starter boost',
+      description: 'Add 100 Victory Points to one tournament.',
+      rewardPointAmount: 100,
+      priceCentavos: 14900,
+      perTournamentPurchaseLimit: 5,
+      tournamentSponsorCap: 1000,
+    ),
+    LbSponsorPackage(
+      id: 'sponsor_featured_v1',
+      packageCode: 'featured_boost',
+      displayName: 'Featured boost',
+      description: 'Add 300 Victory Points to one tournament.',
+      rewardPointAmount: 300,
+      priceCentavos: 39900,
+      perTournamentPurchaseLimit: 3,
+      tournamentSponsorCap: 1000,
+    ),
+  ];
+
+  @override
+  Future<LbHostSponsorPortal> portalForOrganizer(String organizerId) => _delay(
+    LbHostSponsorPortal(
+      tournaments: [LbFixtures.caviteOpen],
+      packages: _packages,
+    ),
+  );
+
+  @override
+  Future<LbSponsorCheckout> createCheckout({
+    required String tournamentId,
+    required LbSponsorPackage package,
+    required PayMethod method,
+    required bool showAttribution,
+    required String idempotencyKey,
+    required Uri successUrl,
+    required Uri cancelUrl,
+  }) => _delay(
+    LbSponsorCheckout(
+      orderId: 'mock-sponsor-order',
+      checkoutUrl: Uri.parse('https://checkout.paymongo.com/mock-sponsor'),
+      rewardPointAmount: package.rewardPointAmount,
+      priceCentavos: package.priceCentavos,
+    ),
+  );
+}
+
+class MockShopRepo implements ShopRepo {
+  MockShopRepo(this._walletState);
+
+  final MockWalletState _walletState;
+  final List<LbShopOrder> _orders = [];
+
+  static const products = [
+    LbShopProduct(
+      id: 'shop_neon_frame_v1',
+      productCode: 'neon_contender_frame',
+      revision: 1,
+      displayName: 'Neon Contender frame',
+      description: 'A permanent neon frame for your player profile.',
+      category: 'profile_cosmetic',
+      fulfillmentType: 'internal_entitlement',
+      priceRewardPoints: 120,
+      platformVisibility: {ShopPlatform.web, ShopPlatform.androidDirect},
+      perUserLimit: 1,
+    ),
+    LbShopProduct(
+      id: 'shop_founder_badge_v1',
+      productCode: 'founding_challenger_badge',
+      revision: 1,
+      displayName: 'Founding Challenger badge',
+      description: 'A permanent badge for early competitive players.',
+      category: 'profile_cosmetic',
+      fulfillmentType: 'internal_entitlement',
+      priceRewardPoints: 250,
+      platformVisibility: {ShopPlatform.web, ShopPlatform.androidDirect},
+      perUserLimit: 1,
+    ),
+  ];
+
+  @override
+  Future<List<LbShopProduct>> catalog(ShopPlatform platform) => _delay([
+    for (final product in products)
+      if (product.platformVisibility.contains(platform)) product,
+  ]);
+
+  @override
+  Future<List<LbShopOrder>> orders() => _delay(List.unmodifiable(_orders));
+
+  @override
+  Future<LbShopPurchaseResult> purchase({
+    required LbShopProduct product,
+    required ShopPlatform platform,
+    required int quantity,
+    required String idempotencyKey,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    if (_walletState.rewardPointBalance <
+        product.priceRewardPoints * quantity) {
+      throw StateError('insufficient_reward_points');
+    }
+    _walletState.rewardPointBalance -= product.priceRewardPoints * quantity;
+    final order = LbShopOrder(
+      id: 'shop_order_${_orders.length + 1}',
+      status: ShopOrderStatus.fulfillmentPending,
+      totalRewardPoints: product.priceRewardPoints * quantity,
+      productName: product.displayName,
+      quantity: quantity,
+      customerStatus: 'Preparing your item',
+      createdAt: LbFixtures.now,
+    );
+    _orders.insert(0, order);
+    return LbShopPurchaseResult(
+      order: order,
+      rewardPointBalance: _walletState.rewardPointBalance,
+      existing: false,
+    );
+  }
+
+  @override
+  Future<LbShopPurchaseResult> cancel({
+    required String orderId,
+    required String reason,
+    required String idempotencyKey,
+  }) async {
+    await Future<void>.delayed(_kWriteLatency);
+    final index = _orders.indexWhere((order) => order.id == orderId);
+    final previous = _orders[index];
+    _walletState.rewardPointBalance += previous.totalRewardPoints;
+    final refunded = LbShopOrder(
+      id: previous.id,
+      status: ShopOrderStatus.refunded,
+      totalRewardPoints: previous.totalRewardPoints,
+      productName: previous.productName,
+      quantity: previous.quantity,
+      customerStatus: 'Cancelled and refunded',
+      createdAt: previous.createdAt,
+      refundedAt: LbFixtures.now,
+    );
+    _orders[index] = refunded;
+    return LbShopPurchaseResult(
+      order: refunded,
+      rewardPointBalance: _walletState.rewardPointBalance,
+      existing: false,
+    );
+  }
+}
+
 class MockTeamsRepo implements TeamsRepo {
   MockTeamsRepo()
     : _teams = {for (final team in LbFixtures.allTeams) team.id: team};

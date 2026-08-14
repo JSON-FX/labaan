@@ -15,6 +15,7 @@ import '../../core/widgets/section_label.dart';
 import '../../core/widgets/slant_button.dart';
 import '../registration/payment_checkout_screen.dart';
 import 'credit_topup_sheet.dart';
+import 'shop_screen.dart';
 
 enum _WalletFilter { all, credits, rewards }
 
@@ -105,6 +106,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       isWeb: kIsWeb,
       targetPlatform: defaultTargetPlatform,
     );
+    final currentShopPlatform = shopPlatform(
+      isWeb: kIsWeb,
+      targetPlatform: defaultTargetPlatform,
+    );
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -155,6 +160,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             onTopup: topupPlatform == null
                 ? null
                 : () => unawaited(_openTopup(topupPlatform)),
+            onShop: currentShopPlatform == null
+                ? null
+                : () => context.push('/shop'),
           ),
         ),
       ),
@@ -168,12 +176,14 @@ class _WalletBody extends StatelessWidget {
     required this.filter,
     required this.onFilter,
     required this.onTopup,
+    required this.onShop,
   });
 
   final LbWallet wallet;
   final _WalletFilter filter;
   final ValueChanged<_WalletFilter> onFilter;
   final VoidCallback? onTopup;
+  final VoidCallback? onShop;
 
   @override
   Widget build(BuildContext context) {
@@ -198,6 +208,10 @@ class _WalletBody extends StatelessWidget {
             onPressed: onTopup,
             leading: const Icon(Icons.add_circle_outline, size: 18),
           ),
+        ],
+        if (onShop != null) ...[
+          const SizedBox(height: 8),
+          GhostButton(label: 'Open Victory Point Shop', onPressed: onShop),
         ],
         const SizedBox(height: 12),
         Text(

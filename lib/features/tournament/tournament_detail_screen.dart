@@ -229,6 +229,12 @@ String _placementShare(int? basisPoints) {
       : '${percent.toStringAsFixed(2)}%';
 }
 
+String _fundingSourceLabel(RewardFundingSource source) => switch (source) {
+  RewardFundingSource.organizerSponsor => 'Organizer',
+  RewardFundingSource.platformPromotion => 'Labaan',
+  RewardFundingSource.brandSponsor => 'Brand partner',
+};
+
 String _minimumCloseSummary(LbTournament tournament) {
   final minimum = tournament.minimumTeams;
   final action = tournament.belowMinimumAction;
@@ -271,6 +277,17 @@ class _WalletRewardCard extends StatelessWidget {
               '${_rewardBasisLabel(tournament.rewardCompetitorBasis)}. '
               'The final pool locks when registration closes.';
     final cap = tournament.rewardPoolCap;
+    final totalCap = tournament.rewardPoolTotalCap;
+    final attributedSponsorPoints = tournament.sponsorAttributions.fold<int>(
+      0,
+      (total, sponsor) => total + sponsor.rewardPoints,
+    );
+    final lockedSources = <(String, int?)>[
+      ('Confirmed entries', tournament.entryScaledRewardPool),
+      ('Organizer boosts', tournament.organizerSponsoredRewardPool),
+      ('Labaan promotions', tournament.platformRewardPool),
+      ('Brand sponsorships', tournament.brandSponsoredRewardPool),
+    ];
 
     return LbCard(
       highlighted: locked,
@@ -286,6 +303,19 @@ class _WalletRewardCard extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(summary, style: LbType.bodySm),
+          if (!locked && attributedSponsorPoints > 0) ...[
+            const SizedBox(height: 7),
+            Text(
+              '+$attributedSponsorPoints VP sponsored boost',
+              style: LbType.bodySm.copyWith(color: LbColors.lime),
+            ),
+          ],
+          if (locked) ...[
+            const SizedBox(height: 9),
+            for (final source in lockedSources)
+              if ((source.$2 ?? 0) > 0)
+                _RewardFundingRow(label: source.$1, value: source.$2!),
+          ],
           const SizedBox(height: 5),
           Text(
             _minimumCloseSummary(tournament),
@@ -294,13 +324,59 @@ class _WalletRewardCard extends StatelessWidget {
           if (hasRule) ...[
             const SizedBox(height: 7),
             Text(
-              '${cap == null ? "No pool cap" : "Cap $cap VP"} · '
+              '${cap == null ? "No entry cap" : "Entry cap $cap VP"} · '
+              '${totalCap == null ? "No overall cap" : "Overall cap $totalCap VP"}\n'
               '1st ${_placementShare(tournament.rewardFirstPlaceBps)} · '
               '2nd ${_placementShare(tournament.rewardSecondPlaceBps)} · '
               '3rd ${_placementShare(tournament.rewardThirdPlaceBps)}',
               style: LbType.metaSm.copyWith(color: LbColors.textMuted),
             ),
           ],
+          if (tournament.sponsorAttributions.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'SUPPORTED BY',
+              style: LbType.metaSm.copyWith(
+                color: LbColors.textDim,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 5),
+            for (final sponsor in tournament.sponsorAttributions)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text(
+                  '${sponsor.name} · ${sponsor.rewardPoints} VP · '
+                  '${_fundingSourceLabel(sponsor.fundingSource)}',
+                  style: LbType.bodySm,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RewardFundingRow extends StatelessWidget {
+  const _RewardFundingRow({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: LbType.metaSm.copyWith(color: LbColors.textMuted),
+            ),
+          ),
+          Text('$value VP', style: LbType.metaSm),
         ],
       ),
     );

@@ -27,6 +27,7 @@ import 'features/system/host_tournament_screen.dart';
 import 'features/system/payout_account_screen.dart';
 import 'features/system/rank_up_screen.dart';
 import 'features/system/settings_screen.dart';
+import 'features/system/shop_screen.dart';
 import 'features/system/support_screen.dart';
 import 'features/system/wallet_screen.dart';
 import 'features/team/player_search_screen.dart';
@@ -121,6 +122,7 @@ class LabaanApp extends StatelessWidget {
             topupResult: state.uri.queryParameters['topupResult'],
           ),
         ),
+        GoRoute(path: '/shop', builder: (_, _) => const ShopScreen()),
         GoRoute(path: '/host', builder: (_, _) => const HostTournamentScreen()),
         GoRoute(
           path: '/support',

@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/data/models.dart';
+import '../../core/data/providers.dart';
+import '../../core/domain/tournament_tier.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../../core/widgets/lb_card.dart';
@@ -10,16 +15,29 @@ import '../../core/widgets/slant_button.dart';
 
 typedef ExternalLauncher = Future<bool> Function(Uri uri);
 
-class HostTournamentScreen extends StatelessWidget {
+class HostTournamentScreen extends ConsumerStatefulWidget {
   const HostTournamentScreen({super.key, this.externalLauncher});
 
   final ExternalLauncher? externalLauncher;
+
+  @override
+  ConsumerState<HostTournamentScreen> createState() =>
+      _HostTournamentScreenState();
+}
+
+class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
+  String? _tournamentId;
+  String? _packageId;
+  PayMethod _method = PayMethod.gcash;
+  bool _showAttribution = true;
+  bool _submitting = false;
+  String? _idempotencyKey;
 
   Future<void> _openGabRegistry(BuildContext context) async {
     final uri = Uri.parse('https://gab.gov.ph/');
     try {
       final opened =
-          await (externalLauncher?.call(uri) ??
+          await (widget.externalLauncher?.call(uri) ??
               launchUrl(uri, mode: LaunchMode.externalApplication));
       if (opened || !context.mounted) return;
     } catch (_) {
@@ -30,8 +48,56 @@ class HostTournamentScreen extends StatelessWidget {
     );
   }
 
+  void _changeSelection(VoidCallback change) {
+    setState(() {
+      change();
+      _idempotencyKey = null;
+    });
+  }
+
+  Future<void> _startCheckout(
+    LbTournament tournament,
+    LbSponsorPackage package,
+  ) async {
+    setState(() => _submitting = true);
+    _idempotencyKey ??=
+        'sponsor:${tournament.id}:${package.id}:${DateTime.now().microsecondsSinceEpoch}';
+    final success = Uri.base.resolve('/host?sponsorResult=pending');
+    final cancel = Uri.base.resolve('/host?sponsorResult=cancelled');
+    try {
+      final checkout = await ref
+          .read(hostSponsorRepoProvider)
+          .createCheckout(
+            tournamentId: tournament.id,
+            package: package,
+            method: _method,
+            showAttribution: _showAttribution,
+            idempotencyKey: _idempotencyKey!,
+            successUrl: success,
+            cancelUrl: cancel,
+          );
+      final opened = await launchUrl(
+        checkout.checkoutUrl,
+        webOnlyWindowName: '_self',
+      );
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open PayMongo Checkout.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not start sponsorship checkout.')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(currentUserProvider);
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -60,14 +126,48 @@ class HostTournamentScreen extends StatelessWidget {
                 Text('Host on Labaan', style: LbType.sectionTitle),
                 const SizedBox(height: 6),
                 Text(
-                  'Tournament creation and operations live in Labaan’s '
-                  'separate organizer application. The player app never '
-                  'grants organizer access or creates tournaments directly.',
+                  kIsWeb
+                      ? 'Fund a fixed Victory Point boost for an eligible '
+                            'draft tournament. PayMongo checkout and signed '
+                            'webhooks keep pricing and rewards server-owned.'
+                      : 'Tournament sponsorship and operations live in '
+                            'Labaan’s web organizer portal. The player app '
+                            'never grants organizer access directly.',
                   style: LbType.bodySm.copyWith(color: LbColors.textMuted),
                 ),
               ],
             ),
           ),
+          if (kIsWeb) ...[
+            const SizedBox(height: 20),
+            session.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, _) => const _PortalMessage(
+                message: 'Could not load your organizer session.',
+              ),
+              data: (user) => user == null
+                  ? const _PortalMessage(
+                      message: 'Sign in to access organizer sponsorship.',
+                    )
+                  : _SponsorPortal(
+                      portal: ref.watch(hostSponsorPortalProvider(user.id)),
+                      tournamentId: _tournamentId,
+                      packageId: _packageId,
+                      method: _method,
+                      showAttribution: _showAttribution,
+                      submitting: _submitting,
+                      onTournamentChanged: (value) =>
+                          _changeSelection(() => _tournamentId = value),
+                      onPackageChanged: (value) =>
+                          _changeSelection(() => _packageId = value),
+                      onMethodChanged: (value) =>
+                          _changeSelection(() => _method = value),
+                      onAttributionChanged: (value) =>
+                          _changeSelection(() => _showAttribution = value),
+                      onSubmit: _startCheckout,
+                    ),
+            ),
+          ],
           const SizedBox(height: 20),
           const SectionLabel('Organizer onboarding'),
           const SizedBox(height: 8),
@@ -105,6 +205,170 @@ class HostTournamentScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SponsorPortal extends StatelessWidget {
+  const _SponsorPortal({
+    required this.portal,
+    required this.tournamentId,
+    required this.packageId,
+    required this.method,
+    required this.showAttribution,
+    required this.submitting,
+    required this.onTournamentChanged,
+    required this.onPackageChanged,
+    required this.onMethodChanged,
+    required this.onAttributionChanged,
+    required this.onSubmit,
+  });
+
+  final AsyncValue<LbHostSponsorPortal> portal;
+  final String? tournamentId;
+  final String? packageId;
+  final PayMethod method;
+  final bool showAttribution;
+  final bool submitting;
+  final ValueChanged<String> onTournamentChanged;
+  final ValueChanged<String> onPackageChanged;
+  final ValueChanged<PayMethod> onMethodChanged;
+  final ValueChanged<bool> onAttributionChanged;
+  final Future<void> Function(LbTournament, LbSponsorPackage) onSubmit;
+
+  @override
+  Widget build(BuildContext context) => portal.when(
+    loading: () => const Center(child: CircularProgressIndicator()),
+    error: (_, _) =>
+        const _PortalMessage(message: 'Could not load sponsorship options.'),
+    data: (data) {
+      if (data.tournaments.isEmpty) {
+        return const _PortalMessage(
+          message:
+              'No eligible draft Wallet tournaments were found. Create one before adding a sponsor boost.',
+        );
+      }
+      if (data.packages.isEmpty) {
+        return const _PortalMessage(
+          message: 'Sponsor packages are not available right now.',
+        );
+      }
+      final selectedTournament = data.tournaments.firstWhere(
+        (item) => item.id == tournamentId,
+        orElse: () => data.tournaments.first,
+      );
+      final selectedPackage = data.packages.firstWhere(
+        (item) => item.id == packageId,
+        orElse: () => data.packages.first,
+      );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionLabel('Sponsor a reward pool'),
+          const SizedBox(height: 8),
+          LbCard(
+            child: Column(
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedTournament.id,
+                  decoration: const InputDecoration(labelText: 'Tournament'),
+                  items: [
+                    for (final tournament in data.tournaments)
+                      DropdownMenuItem(
+                        value: tournament.id,
+                        child: Text(tournament.title),
+                      ),
+                  ],
+                  onChanged: submitting
+                      ? null
+                      : (value) {
+                          if (value != null) onTournamentChanged(value);
+                        },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedPackage.id,
+                  decoration: const InputDecoration(labelText: 'Reward boost'),
+                  items: [
+                    for (final package in data.packages)
+                      DropdownMenuItem(
+                        value: package.id,
+                        child: Text(
+                          '${package.displayName} · ${package.rewardPointAmount} VP · '
+                          '${formatPeso(package.pricePhp)}',
+                        ),
+                      ),
+                  ],
+                  onChanged: submitting
+                      ? null
+                      : (value) {
+                          if (value != null) onPackageChanged(value);
+                        },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<PayMethod>(
+                  initialValue: method,
+                  decoration: const InputDecoration(labelText: 'Pay with'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: PayMethod.gcash,
+                      child: Text('GCash'),
+                    ),
+                    DropdownMenuItem(
+                      value: PayMethod.maya,
+                      child: Text('Maya'),
+                    ),
+                    DropdownMenuItem(
+                      value: PayMethod.qrph,
+                      child: Text('QR Ph'),
+                    ),
+                    DropdownMenuItem(
+                      value: PayMethod.card,
+                      child: Text('Card'),
+                    ),
+                  ],
+                  onChanged: submitting
+                      ? null
+                      : (value) {
+                          if (value != null) onMethodChanged(value);
+                        },
+                ),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: showAttribution,
+                  onChanged: submitting ? null : onAttributionChanged,
+                  title: const Text('Show organizer attribution'),
+                  subtitle: const Text(
+                    'Your public username appears beside this reward boost.',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SlantButton(
+                  label: submitting
+                      ? 'Opening checkout…'
+                      : 'Pay ${formatPeso(selectedPackage.pricePhp)}',
+                  onPressed: submitting
+                      ? null
+                      : () => onSubmit(selectedTournament, selectedPackage),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _PortalMessage extends StatelessWidget {
+  const _PortalMessage({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => LbCard(
+    child: Text(
+      message,
+      style: LbType.bodySm.copyWith(color: LbColors.textMuted),
+    ),
+  );
 }
 
 class _HostStep extends StatelessWidget {

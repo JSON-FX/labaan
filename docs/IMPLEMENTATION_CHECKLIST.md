@@ -152,11 +152,26 @@ development environment, not merely drawn as screens.
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge
       Function with ownership, draft-state, cap, URL, and idempotency checks
+- [x] Add a web-only Host sponsorship portal for eligible draft tournaments,
+      server-priced packages, attribution choice, and same-tab PayMongo checkout
 - [x] Route signed sponsor payments through the global provider receipt and
       settle exactly one immutable tournament allocation with no wallet credit
 - [x] Lock entry-scaled, organizer, platform, and brand reward sources into one
       exact, capped final tournament pool
 - [x] Add pre-lock sponsor cancellation with durable full PayMongo refund
       requests, signed lifecycle settlement, and manual-review fallbacks
-- [ ] Add Apple IAP purchase and server verification for iOS Credits
+- [x] Show the locked Victory Point source breakdown and approved sponsor
+      attribution on player tournament details without exposing anonymous IDs
+- [x] Defer Apple IAP from the current MVP and keep top-up/Shop entry points
+      hidden on iOS while shared balances remain usable for tournament entry
+- [x] Add the provisional digital-only Shop policy plus immutable catalog,
+      inventory, order, fulfillment, secret, entitlement, RLS, and audit schema
+- [x] Add the authenticated atomic Shop order command that spends Victory
+      Points, reserves stock, snapshots price, and queues fulfillment once
+- [x] Add leased internal Shop fulfillment with idempotent entitlements,
+      inventory finalization, bounded retry, and manual-review fallback
+- [x] Add pre-delivery Shop cancellation that restores reserved inventory and
+      posts one compensating Victory Point refund without rewriting purchase
+- [x] Add the direct Android/web Shop UI with wallet balance, catalog details,
+      purchase confirmation, order history/status, and cancellation; hide iOS
 - [ ] Add tournament Victory Point rewards and Shop spending

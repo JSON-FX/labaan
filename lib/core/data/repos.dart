@@ -244,6 +244,39 @@ abstract class WalletRepo {
   });
 }
 
+/// Web-only organizer sponsorship catalog and PayMongo checkout commands.
+abstract class HostSponsorRepo {
+  Future<LbHostSponsorPortal> portalForOrganizer(String organizerId);
+
+  Future<LbSponsorCheckout> createCheckout({
+    required String tournamentId,
+    required LbSponsorPackage package,
+    required PayMethod method,
+    required bool showAttribution,
+    required String idempotencyKey,
+    required Uri successUrl,
+    required Uri cancelUrl,
+  });
+}
+
+abstract class ShopRepo {
+  Future<List<LbShopProduct>> catalog(ShopPlatform platform);
+  Future<List<LbShopOrder>> orders();
+
+  Future<LbShopPurchaseResult> purchase({
+    required LbShopProduct product,
+    required ShopPlatform platform,
+    required int quantity,
+    required String idempotencyKey,
+  });
+
+  Future<LbShopPurchaseResult> cancel({
+    required String orderId,
+    required String reason,
+    required String idempotencyKey,
+  });
+}
+
 /// Team management — create, invite, roster, leave.
 abstract class TeamsRepo {
   Future<LbTeam> byId(String teamId);

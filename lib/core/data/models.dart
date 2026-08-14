@@ -146,12 +146,18 @@ class LbTournament {
     this.rewardCompetitorBasis,
     this.rewardPointsPerCompetitor,
     this.rewardPoolCap,
+    this.rewardPoolTotalCap,
     this.rewardFirstPlaceBps,
     this.rewardSecondPlaceBps,
     this.rewardThirdPlaceBps,
     this.rewardCompetitorCount,
+    this.entryScaledRewardPool,
+    this.organizerSponsoredRewardPool,
+    this.platformRewardPool,
+    this.brandSponsoredRewardPool,
     this.finalRewardPool,
     this.rewardPoolLockedAt,
+    this.sponsorAttributions = const [],
     this.minimumTeams,
     this.belowMinimumAction,
     this.registrationCloseOutcome,
@@ -182,12 +188,18 @@ class LbTournament {
   final RewardCompetitorBasis? rewardCompetitorBasis;
   final int? rewardPointsPerCompetitor;
   final int? rewardPoolCap;
+  final int? rewardPoolTotalCap;
   final int? rewardFirstPlaceBps;
   final int? rewardSecondPlaceBps;
   final int? rewardThirdPlaceBps;
   final int? rewardCompetitorCount;
+  final int? entryScaledRewardPool;
+  final int? organizerSponsoredRewardPool;
+  final int? platformRewardPool;
+  final int? brandSponsoredRewardPool;
   final int? finalRewardPool;
   final DateTime? rewardPoolLockedAt;
+  final List<LbSponsorAttribution> sponsorAttributions;
   final int? minimumTeams;
   final BelowMinimumAction? belowMinimumAction;
   final RegistrationCloseOutcome? registrationCloseOutcome;
@@ -213,11 +225,26 @@ class LbTournament {
   }
 }
 
+@immutable
+class LbSponsorAttribution {
+  const LbSponsorAttribution({
+    required this.name,
+    required this.rewardPoints,
+    required this.fundingSource,
+  });
+
+  final String name;
+  final int rewardPoints;
+  final RewardFundingSource fundingSource;
+}
+
 enum RegistrationPaymentStatus { pending, paid, refunded, failed }
 
 enum TournamentEconomy { legacyCash, walletV2 }
 
 enum RewardCompetitorBasis { registration, team }
+
+enum RewardFundingSource { organizerSponsor, platformPromotion, brandSponsor }
 
 enum BelowMinimumAction { postpone, cancel }
 
@@ -581,6 +608,142 @@ class LbTopupCheckout {
   final Uri checkoutUrl;
   final int creditAmount;
   final int priceCentavos;
+}
+
+@immutable
+class LbSponsorPackage {
+  const LbSponsorPackage({
+    required this.id,
+    required this.packageCode,
+    required this.displayName,
+    required this.description,
+    required this.rewardPointAmount,
+    required this.priceCentavos,
+    required this.perTournamentPurchaseLimit,
+    required this.tournamentSponsorCap,
+  });
+
+  final String id;
+  final String packageCode;
+  final String displayName;
+  final String description;
+  final int rewardPointAmount;
+  final int priceCentavos;
+  final int perTournamentPurchaseLimit;
+  final int tournamentSponsorCap;
+
+  double get pricePhp => priceCentavos / 100;
+}
+
+@immutable
+class LbSponsorCheckout {
+  const LbSponsorCheckout({
+    required this.orderId,
+    required this.checkoutUrl,
+    required this.rewardPointAmount,
+    required this.priceCentavos,
+  });
+
+  final String orderId;
+  final Uri checkoutUrl;
+  final int rewardPointAmount;
+  final int priceCentavos;
+}
+
+@immutable
+class LbHostSponsorPortal {
+  const LbHostSponsorPortal({
+    required this.tournaments,
+    required this.packages,
+  });
+
+  final List<LbTournament> tournaments;
+  final List<LbSponsorPackage> packages;
+}
+
+enum ShopPlatform { web, androidDirect }
+
+enum ShopOrderStatus {
+  pending,
+  paid,
+  fulfillmentPending,
+  fulfilled,
+  cancellationPending,
+  cancelled,
+  refunded,
+  review,
+}
+
+@immutable
+class LbShopProduct {
+  const LbShopProduct({
+    required this.id,
+    required this.productCode,
+    required this.revision,
+    required this.displayName,
+    required this.description,
+    required this.category,
+    required this.fulfillmentType,
+    required this.priceRewardPoints,
+    required this.platformVisibility,
+    this.perUserLimit,
+    this.imageUrl,
+  });
+
+  final String id;
+  final String productCode;
+  final int revision;
+  final String displayName;
+  final String description;
+  final String category;
+  final String fulfillmentType;
+  final int priceRewardPoints;
+  final Set<ShopPlatform> platformVisibility;
+  final int? perUserLimit;
+  final Uri? imageUrl;
+}
+
+@immutable
+class LbShopOrder {
+  const LbShopOrder({
+    required this.id,
+    required this.status,
+    required this.totalRewardPoints,
+    required this.productName,
+    required this.quantity,
+    required this.customerStatus,
+    required this.createdAt,
+    this.fulfilledAt,
+    this.refundedAt,
+  });
+
+  final String id;
+  final ShopOrderStatus status;
+  final int totalRewardPoints;
+  final String productName;
+  final int quantity;
+  final String customerStatus;
+  final DateTime createdAt;
+  final DateTime? fulfilledAt;
+  final DateTime? refundedAt;
+
+  bool get canCancel =>
+      status == ShopOrderStatus.paid ||
+      status == ShopOrderStatus.fulfillmentPending ||
+      status == ShopOrderStatus.review;
+}
+
+@immutable
+class LbShopPurchaseResult {
+  const LbShopPurchaseResult({
+    required this.order,
+    required this.rewardPointBalance,
+    required this.existing,
+  });
+
+  final LbShopOrder order;
+  final int rewardPointBalance;
+  final bool existing;
 }
 
 enum LbWalletTransactionKind {

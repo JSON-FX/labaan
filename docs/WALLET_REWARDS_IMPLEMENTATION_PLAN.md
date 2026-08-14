@@ -364,19 +364,24 @@ under duplicate delivery, and refund/reversal behavior is proven.
       and refund-to-original-method policy pending provider/legal approval.
 - [x] Create organizer sponsor-order, provider-event subject, and immutable
       tournament sponsor-allocation schemas with RLS and audit history.
-- [ ] Implement sponsor orders and PayMongo checkout on the Host web portal.
+- [x] Implement sponsor orders and PayMongo checkout on the Host web portal.
 - [x] Settle signed PayMongo sponsor payments into exactly one immutable
       tournament-bound allocation without crediting the organizer wallet.
 - [x] Combine entry-scaled, organizer, platform, and brand allocations without
       exceeding configured caps.
 - [x] Implement cancellation refund/Host Credit rules (original-method refund
       for MVP; restricted Host Credit remains deferred).
-- [ ] Display sponsor attribution and final locked pool to players.
+- [x] Display sponsor attribution and final locked pool to players.
 
 Exit criteria: a streamer can fund a fixed boost without receiving spendable
 Victory Points, and only verified winners can receive the locked allocation.
 
-### Phase 5 - Apple IAP
+### Phase 5 - Apple IAP (deferred from the current MVP)
+
+The approved implementation direction currently has no Apple IAP. iOS can use
+cross-platform balances earned or funded on supported direct platforms, while
+top-up and Shop entry points remain hidden. Keep these tasks as a future option
+only if the distribution and App Review strategy changes.
 
 - [ ] Configure consumable Credit products in App Store Connect.
 - [ ] Add Flutter IAP purchase and pending-state UI.
@@ -391,12 +396,18 @@ verification, and refund/revocation tests pass.
 
 ### Phase 6 - Shop MVP
 
-- [ ] Define the initial approved catalog and fulfillment ownership.
-- [ ] Create product, inventory, order, order-item, and fulfillment models.
-- [ ] Implement atomic Victory Point purchase and inventory reservation.
-- [ ] Implement fulfillment and Shop refund workflows.
-- [ ] Build Shop browse, detail, checkout, order history, and status UI.
-- [ ] Enforce platform-specific catalog visibility where required.
+- [x] Define the provisional development catalog, exclusions, platform
+      visibility, refund boundary, and fulfillment ownership gates.
+- [x] Create product, inventory, order, order-item, fulfillment, secret, and
+      entitlement models with immutable economic snapshots.
+- [x] Implement atomic, idempotent Victory Point purchase and inventory
+      reservation with server-owned pricing and per-user/platform checks.
+- [x] Implement leased internal-entitlement fulfillment and atomic pre-delivery
+      Shop cancellation with compensating Victory Point refunds.
+- [x] Build direct Android/web Shop browse, product detail/confirmation,
+      Victory Point checkout, order history/status, and eligible cancellation UI.
+- [x] Enforce direct Android/web-only catalog visibility in server-owned offers;
+      iOS has no Shop entry point.
 - [ ] Obtain authorization for third-party game items, imagery, and codes.
 
 Exit criteria: a Victory Point purchase cannot overspend or oversell inventory,

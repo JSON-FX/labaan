@@ -230,6 +230,13 @@ class LbFixtures {
     rewardFirstPlaceBps: 7000,
     rewardSecondPlaceBps: 3000,
     rewardThirdPlaceBps: 0,
+    sponsorAttributions: const [
+      LbSponsorAttribution(
+        name: 'Cavite Esports Club',
+        rewardPoints: 300,
+        fundingSource: RewardFundingSource.organizerSponsor,
+      ),
+    ],
     minimumTeams: 4,
     belowMinimumAction: BelowMinimumAction.cancel,
   );

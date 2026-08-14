@@ -112,6 +112,24 @@ List<String> _relatedUserIds(Map<String, dynamic> row, String key) {
   ];
 }
 
+List<LbSponsorAttribution> _sponsorAttributions(Map<String, dynamic> row) {
+  final values = row['tournament_sponsor_allocations'];
+  if (values is! List) return const [];
+  return [
+    for (final item in values)
+      if (_map(item)['attribution_name'] case final String name)
+        LbSponsorAttribution(
+          name: name,
+          rewardPoints:
+              (_map(item)['reward_point_amount'] as num?)?.toInt() ?? 0,
+          fundingSource: _enumFromSnake(
+            RewardFundingSource.values,
+            _map(item)['funding_source'] as String? ?? 'organizer_sponsor',
+          ),
+        ),
+  ];
+}
+
 LbTournament _tournamentFromRow(Map<String, dynamic> row) {
   final createdAt = DateTime.parse(row['created_at'] as String);
   return LbTournament(
@@ -139,14 +157,22 @@ LbTournament _tournamentFromRow(Map<String, dynamic> row) {
     rewardPointsPerCompetitor: (row['reward_points_per_competitor'] as num?)
         ?.toInt(),
     rewardPoolCap: (row['reward_pool_cap'] as num?)?.toInt(),
+    rewardPoolTotalCap: (row['reward_pool_total_cap'] as num?)?.toInt(),
     rewardFirstPlaceBps: (row['reward_first_place_bps'] as num?)?.toInt(),
     rewardSecondPlaceBps: (row['reward_second_place_bps'] as num?)?.toInt(),
     rewardThirdPlaceBps: (row['reward_third_place_bps'] as num?)?.toInt(),
     rewardCompetitorCount: (row['reward_competitor_count'] as num?)?.toInt(),
+    entryScaledRewardPool: (row['entry_scaled_reward_pool'] as num?)?.toInt(),
+    organizerSponsoredRewardPool:
+        (row['organizer_sponsored_reward_pool'] as num?)?.toInt(),
+    platformRewardPool: (row['platform_reward_pool'] as num?)?.toInt(),
+    brandSponsoredRewardPool: (row['brand_sponsored_reward_pool'] as num?)
+        ?.toInt(),
     finalRewardPool: (row['final_reward_pool'] as num?)?.toInt(),
     rewardPoolLockedAt: row['reward_pool_locked_at'] == null
         ? null
         : DateTime.parse(row['reward_pool_locked_at'] as String),
+    sponsorAttributions: _sponsorAttributions(row),
     minimumTeams: (row['minimum_teams'] as num?)?.toInt(),
     belowMinimumAction: row['below_minimum_action'] == null
         ? null
@@ -288,7 +314,9 @@ Map<String, dynamic> _functionData(FunctionResponse response) {
 
 const _tournamentSelect =
     '*, tournament_moderators(user_id), '
-    'tournament_spectators(user_id)';
+    'tournament_spectators(user_id), '
+    'tournament_sponsor_allocations('
+    'funding_source,reward_point_amount,attribution_name)';
 
 class SupabaseTournamentsRepo implements TournamentsRepo {
   SupabaseTournamentsRepo(this._client);
@@ -1270,6 +1298,232 @@ class SupabaseWalletRepo implements WalletRepo {
     'reward_point' => LbWalletCurrency.rewardPoint,
     _ => throw FormatException('Unsupported wallet currency: $code'),
   };
+}
+
+class SupabaseHostSponsorRepo implements HostSponsorRepo {
+  SupabaseHostSponsorRepo(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<LbHostSponsorPortal> portalForOrganizer(String organizerId) async {
+    final responses = await Future.wait<dynamic>([
+      _client
+          .from('tournaments')
+          .select(_tournamentSelect)
+          .eq('organizer_id', organizerId)
+          .eq('economy_mode', 'wallet_v2')
+          .eq('status', 'draft')
+          .order('created_at', ascending: false),
+      _client
+          .from('sponsor_package_config')
+          .select()
+          .eq('status', 'active')
+          .order('sort_order')
+          .order('reward_point_amount'),
+    ]);
+    return LbHostSponsorPortal(
+      tournaments: [
+        for (final row in responses[0] as List<dynamic>)
+          _tournamentFromRow(_map(row)),
+      ],
+      packages: [
+        for (final row in responses[1] as List<dynamic>)
+          _packageFromRow(_map(row)),
+      ],
+    );
+  }
+
+  @override
+  Future<LbSponsorCheckout> createCheckout({
+    required String tournamentId,
+    required LbSponsorPackage package,
+    required PayMethod method,
+    required bool showAttribution,
+    required String idempotencyKey,
+    required Uri successUrl,
+    required Uri cancelUrl,
+  }) async {
+    final response = await _client.functions.invoke(
+      'organizer-sponsor-checkout',
+      headers: {'Idempotency-Key': idempotencyKey},
+      body: {
+        'tournamentId': tournamentId,
+        'packageId': package.id,
+        'method': method.name,
+        'showAttribution': showAttribution,
+        'idempotencyKey': idempotencyKey,
+        'successUrl': successUrl.toString(),
+        'cancelUrl': cancelUrl.toString(),
+      },
+    );
+    final data = _functionData(response);
+    final order = _map(data['order']);
+    final checkoutUrl = Uri.tryParse(data['checkoutUrl']?.toString() ?? '');
+    if (checkoutUrl == null ||
+        checkoutUrl.scheme != 'https' ||
+        checkoutUrl.host != 'checkout.paymongo.com') {
+      throw const FormatException('Backend returned an invalid checkout URL');
+    }
+    return LbSponsorCheckout(
+      orderId: order['id'] as String,
+      checkoutUrl: checkoutUrl,
+      rewardPointAmount: (order['reward_point_amount'] as num).toInt(),
+      priceCentavos: (order['price_centavos'] as num).toInt(),
+    );
+  }
+
+  LbSponsorPackage _packageFromRow(Map<String, dynamic> row) =>
+      LbSponsorPackage(
+        id: row['id'] as String,
+        packageCode: row['package_code'] as String,
+        displayName: row['display_name'] as String,
+        description: row['description'] as String,
+        rewardPointAmount: (row['reward_point_amount'] as num).toInt(),
+        priceCentavos: (row['price_centavos'] as num).toInt(),
+        perTournamentPurchaseLimit:
+            (row['per_tournament_purchase_limit'] as num).toInt(),
+        tournamentSponsorCap: (row['tournament_sponsor_cap'] as num).toInt(),
+      );
+}
+
+class SupabaseShopRepo implements ShopRepo {
+  SupabaseShopRepo(this._client);
+
+  final SupabaseClient _client;
+
+  static const _orderSelect = '*, shop_order_items(*, shop_fulfillments(*))';
+
+  @override
+  Future<List<LbShopProduct>> catalog(ShopPlatform platform) async {
+    final rows = await _client
+        .from('shop_products')
+        .select()
+        .eq('status', 'active')
+        .contains('platform_visibility', [platform.snake])
+        .order('sort_order')
+        .order('price_reward_points');
+    return [for (final row in rows) _productFromRow(_map(row))];
+  }
+
+  @override
+  Future<List<LbShopOrder>> orders() async {
+    final rows = await _client
+        .from('shop_orders')
+        .select(_orderSelect)
+        .order('created_at', ascending: false)
+        .limit(50);
+    return [for (final row in rows) _orderFromRow(_map(row))];
+  }
+
+  @override
+  Future<LbShopPurchaseResult> purchase({
+    required LbShopProduct product,
+    required ShopPlatform platform,
+    required int quantity,
+    required String idempotencyKey,
+  }) async {
+    final response = await _client.functions.invoke(
+      'shop-order-create',
+      headers: {'Idempotency-Key': idempotencyKey},
+      body: {
+        'productId': product.id,
+        'quantity': quantity,
+        'platform': platform.snake,
+        'idempotencyKey': idempotencyKey,
+      },
+    );
+    final data = _functionData(response);
+    return LbShopPurchaseResult(
+      order: _orderFromParts(
+        _map(data['order']),
+        _map(data['item']),
+        _map(data['fulfillment']),
+      ),
+      rewardPointBalance: (data['rewardPointBalance'] as num).toInt(),
+      existing: data['existing'] as bool? ?? false,
+    );
+  }
+
+  @override
+  Future<LbShopPurchaseResult> cancel({
+    required String orderId,
+    required String reason,
+    required String idempotencyKey,
+  }) async {
+    final response = await _client.functions.invoke(
+      'shop-order-cancel',
+      headers: {'Idempotency-Key': idempotencyKey},
+      body: {
+        'orderId': orderId,
+        'reason': reason,
+        'idempotencyKey': idempotencyKey,
+      },
+    );
+    final data = _functionData(response);
+    final row = await _client
+        .from('shop_orders')
+        .select(_orderSelect)
+        .eq('id', orderId)
+        .single();
+    return LbShopPurchaseResult(
+      order: _orderFromRow(_map(row)),
+      rewardPointBalance: (data['rewardPointBalance'] as num).toInt(),
+      existing: data['existing'] as bool? ?? false,
+    );
+  }
+
+  LbShopProduct _productFromRow(Map<String, dynamic> row) {
+    final rawPlatforms = row['platform_visibility'] as List? ?? const [];
+    final rawImageUrl = row['image_url'] as String?;
+    return LbShopProduct(
+      id: row['id'] as String,
+      productCode: row['product_code'] as String,
+      revision: (row['revision'] as num).toInt(),
+      displayName: row['display_name'] as String,
+      description: row['description'] as String,
+      category: row['category'] as String,
+      fulfillmentType: row['fulfillment_type'] as String,
+      priceRewardPoints: (row['price_reward_points'] as num).toInt(),
+      platformVisibility: {
+        for (final value in rawPlatforms)
+          _enumFromSnake(ShopPlatform.values, value as String),
+      },
+      perUserLimit: (row['per_user_limit'] as num?)?.toInt(),
+      imageUrl: rawImageUrl == null ? null : Uri.tryParse(rawImageUrl),
+    );
+  }
+
+  LbShopOrder _orderFromRow(Map<String, dynamic> row) {
+    final items = row['shop_order_items'] as List? ?? const [];
+    final item = items.isEmpty ? <String, dynamic>{} : _map(items.first);
+    final fulfillments = item['shop_fulfillments'] as List? ?? const [];
+    final fulfillment = fulfillments.isEmpty
+        ? <String, dynamic>{}
+        : _map(fulfillments.first);
+    return _orderFromParts(row, item, fulfillment);
+  }
+
+  LbShopOrder _orderFromParts(
+    Map<String, dynamic> order,
+    Map<String, dynamic> item,
+    Map<String, dynamic> fulfillment,
+  ) => LbShopOrder(
+    id: order['id'] as String,
+    status: _enumFromSnake(ShopOrderStatus.values, order['status'] as String),
+    totalRewardPoints: (order['total_reward_points'] as num).toInt(),
+    productName: item['product_name'] as String? ?? 'Shop item',
+    quantity: (item['quantity'] as num?)?.toInt() ?? 1,
+    customerStatus:
+        fulfillment['customer_status'] as String? ?? 'Preparing your item',
+    createdAt: DateTime.parse(order['created_at'] as String),
+    fulfilledAt: order['fulfilled_at'] == null
+        ? null
+        : DateTime.parse(order['fulfilled_at'] as String),
+    refundedAt: order['refunded_at'] == null
+        ? null
+        : DateTime.parse(order['refunded_at'] as String),
+  );
 }
 
 class SupabaseTeamsRepo implements TeamsRepo {
