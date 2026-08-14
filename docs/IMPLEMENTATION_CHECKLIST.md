@@ -150,5 +150,7 @@ development environment, not merely drawn as screens.
       ledger, audit, mismatch, stale-order, and manual-review signals
 - [x] Define provisional immutable streamer sponsor packages and create
       tournament-bound sponsor order/allocation/provider-event schemas
+- [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge
+      Function with ownership, draft-state, cap, URL, and idempotency checks
 - [ ] Add Apple IAP purchase and server verification for iOS Credits
 - [ ] Add tournament Victory Point rewards and Shop spending
