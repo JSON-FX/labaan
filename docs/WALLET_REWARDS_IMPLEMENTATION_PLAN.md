@@ -417,7 +417,7 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 
 - [ ] Build wallet, top-up, sponsor, reward, and Shop operational dashboards.
 - [x] Require reasons and immutable audit entries for admin adjustments.
-- [ ] Add fraud, velocity, duplicate-account, refund-deficit, and abuse review.
+- [x] Add fraud, velocity, duplicate-account, refund-deficit, and abuse review.
 - [ ] Add economy reporting for issuance, spending, outstanding liability,
       redemption cost, and provider reconciliation.
   - [x] Add the super-admin reporting foundation for account integrity, provider

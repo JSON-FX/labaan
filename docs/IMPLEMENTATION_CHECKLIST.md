@@ -151,6 +151,9 @@ development environment, not merely drawn as screens.
 - [x] Add fail-closed environment/platform feature flags for Wallet entry,
       Credit top-up, organizer sponsorship, and Shop; enforce them server-side
       and hide disabled Flutter entry points
+- [x] Add idempotency-aware economy velocity limits and a unified super-admin
+      risk queue for refund deficits, provider mismatches, duplicate-account
+      signals, and reasoned audited resolution
 - [x] Define provisional immutable streamer sponsor packages and create
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge
