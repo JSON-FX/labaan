@@ -302,6 +302,11 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
               label: 'Create Wallet tournament',
               onPressed: _createTournamentDraft,
             ),
+            const SizedBox(height: 8),
+            GhostButton(
+              label: 'Sponsorship terms',
+              onPressed: () => context.push('/settings/sponsorship-terms'),
+            ),
           ],
           if (kIsWeb && sponsorshipEnabled) ...[
             const SizedBox(height: 20),

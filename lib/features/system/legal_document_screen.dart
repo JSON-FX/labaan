@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 
-enum LegalDocument { privacy, terms }
+enum LegalDocument { privacy, terms, tournamentRules, sponsorshipTerms }
 
 class LegalDocumentScreen extends StatelessWidget {
   const LegalDocumentScreen({required this.document, super.key});
@@ -13,14 +13,25 @@ class LegalDocumentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final privacy = document == LegalDocument.privacy;
+    final title = switch (document) {
+      LegalDocument.privacy => 'Privacy policy',
+      LegalDocument.terms => 'Terms of service',
+      LegalDocument.tournamentRules => 'Tournament rules',
+      LegalDocument.sponsorshipTerms => 'Sponsorship terms',
+    };
+    final content = switch (document) {
+      LegalDocument.privacy => _privacy,
+      LegalDocument.terms => _terms,
+      LegalDocument.tournamentRules => _tournamentRules,
+      LegalDocument.sponsorshipTerms => _sponsorshipTerms,
+    };
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           onPressed: context.pop,
           icon: const Icon(Icons.chevron_left),
         ),
-        title: Text(privacy ? 'Privacy policy' : 'Terms of service'),
+        title: Text(title),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 32),
@@ -30,10 +41,7 @@ class LegalDocumentScreen extends StatelessWidget {
             style: LbType.metaSm.copyWith(color: LbColors.lime),
           ),
           const SizedBox(height: 12),
-          Text(
-            privacy ? _privacy : _terms,
-            style: LbType.bodySm.copyWith(height: 1.6),
-          ),
+          Text(content, style: LbType.bodySm.copyWith(height: 1.6)),
         ],
       ),
     );
@@ -51,13 +59,33 @@ You may update your profile and communication preferences in Settings. Account d
 This draft must be reviewed by Philippine privacy counsel before production release.''';
 
   static const _terms = '''
-Labaan is a tournament marketplace. You must provide accurate account information, follow tournament rules, submit truthful results, and avoid cheating, harassment, collusion, chargeback abuse, and account sharing.
+Labaan operates skill-based tournaments using two separate closed-loop units. Credits may pay tournament entry fees. Victory Points are earned rewards spendable only on eligible Shop products. Neither unit can be withdrawn, transferred, resold, or converted to money or to the other unit.
 
-Entry fees, platform fees, prize pools, lock times, formats, and payout conditions are shown before registration. Tournament results may be reviewed through the dispute and moderation process.
+Tournament capacity, minimum-start rule, Credit fee, reward formula, cap, placement split, lock time, format, and underfill behavior are shown before registration. Entry fees do not create cash prizes. Results may be reviewed through the evidence, dispute, and moderation process.
 
-Ranks and badges are platform progression indicators and have no cash value. Payouts require a valid destination matching the recipient and may be delayed for verification, disputes, or compliance review.
+Credits, Victory Points, ranks, badges, and Shop entitlements have no cash value. Provider refunds, payment reversals, fraud signals, or rule violations may freeze spending or require manual review.
 
 Labaan may restrict accounts that violate tournament integrity or applicable law. Material disputes and refund rights remain subject to Philippine law and the final production terms.
 
 These are draft MVP terms and must be reviewed by Philippine gaming and consumer-protection counsel before production release.''';
+
+  static const _tournamentRules = '''
+Credits and Victory Points are separate, non-cashable units. A registration is confirmed only when the server records the Credit debit. Cancellation returns the exact fee through a new wallet transaction.
+
+Every tournament publishes its capacity, minimum confirmed teams, underfill action, bracket format, reward rate, cap, and placement split before registration. It may start below capacity when the minimum is met. The final Victory Point pool is based on confirmed eligible teams at lock plus verified sponsor allocations, subject to the published cap.
+
+Only verified results and the locked eligible roster can receive rewards. Players must use their own account, submit truthful evidence, and avoid cheating, collusion, harassment, account sharing, automation abuse, and payment abuse. Disputes use Labaan’s evidence and moderator process.
+
+The Shop excludes cash, wallet vouchers, gift cards, cash equivalents, resale, and randomized loot boxes. Eligible pre-delivery cancellation restores Victory Points through a compensating wallet transaction.
+
+This product-rule draft remains subject to each tournament’s published rules, final Terms, publisher rules, and legal review.''';
+
+  static const _sponsorshipTerms = '''
+Approved organizers may sponsor an eligible Wallet tournament through the web Host portal. Package price, Victory Point allocation, limits, cap, attribution, and cancellation policy are shown before checkout.
+
+Payment is made to Labaan. Only a verified signed provider event activates the tournament allocation. Sponsorship never credits an organizer wallet and cannot be transferred, withdrawn, resold, or assigned to a chosen winner. Labaan awards the locked pool from verified results.
+
+Before reward lock, an eligible cancellation requests a full refund to the original payment method. After lock, exceptional resolution requires manual review. Provider failures, mismatches, refunds, chargebacks, and abuse signals may also require review.
+
+Organizers must use authorized funds and branding, disclose material sponsor relationships, and comply with publisher, advertising, tournament, and Philippine law. Production use requires provider approval and final legal terms.''';
 }

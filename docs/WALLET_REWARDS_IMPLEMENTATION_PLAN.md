@@ -283,7 +283,8 @@ disbursement, and presents a cash-flow wallet rather than stored balances.
 - [x] Safely isolate the backend's current uncommitted shared-function changes.
 - [x] Start wallet work on new `codex/` branches after those checkpoints.
 - [ ] Finalize the open decisions in section 10.
-- [ ] Write player tournament rules and organizer sponsorship terms.
+- [x] Write product-draft player tournament rules and organizer sponsorship
+      terms and expose them in the app; counsel review remains required.
 - [ ] Request written PayMongo approval for player top-ups and organizer
       sponsorship payments under the complete non-cashable model.
 - [ ] Confirm the iOS model and contest wording with App Review/legal counsel.

@@ -132,6 +132,18 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           _SettingsRow(
+            icon: Icons.emoji_events_rounded,
+            label: 'Tournament rules',
+            onTap: () => context.push('/settings/tournament-rules'),
+          ),
+          const SizedBox(height: 6),
+          _SettingsRow(
+            icon: Icons.campaign_rounded,
+            label: 'Organizer sponsorship terms',
+            onTap: () => context.push('/settings/sponsorship-terms'),
+          ),
+          const SizedBox(height: 6),
+          _SettingsRow(
             icon: Icons.verified_rounded,
             label: 'GAB permit registry',
             onTap: () => launchUrl(

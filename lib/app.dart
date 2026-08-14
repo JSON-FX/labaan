@@ -169,6 +169,18 @@ class LabaanApp extends StatelessWidget {
               builder: (_, _) =>
                   const LegalDocumentScreen(document: LegalDocument.terms),
             ),
+            GoRoute(
+              path: 'tournament-rules',
+              builder: (_, _) => const LegalDocumentScreen(
+                document: LegalDocument.tournamentRules,
+              ),
+            ),
+            GoRoute(
+              path: 'sponsorship-terms',
+              builder: (_, _) => const LegalDocumentScreen(
+                document: LegalDocument.sponsorshipTerms,
+              ),
+            ),
           ],
         ),
         GoRoute(
