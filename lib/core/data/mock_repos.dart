@@ -790,6 +790,14 @@ class MockAdminEconomyRepo implements AdminEconomyRepo {
   }) async {}
 
   @override
+  Future<Map<String, int>> runShopFulfillment({int limit = 25}) async => const {
+    'claimed': 0,
+    'fulfilled': 0,
+    'retried': 0,
+    'review': 0,
+  };
+
+  @override
   Future<void> resolveRiskCase({
     required String caseId,
     required bool dismissed,

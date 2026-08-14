@@ -1396,6 +1396,19 @@ class SupabaseAdminEconomyRepo implements AdminEconomyRepo {
       throw StateError('Reward funding allocation failed');
     }
   }
+
+  @override
+  Future<Map<String, int>> runShopFulfillment({int limit = 25}) async {
+    final response = await _client.functions.invoke(
+      'admin-shop-fulfillment-run',
+      body: {'limit': limit},
+    );
+    final data = _functionData(response);
+    return {
+      for (final key in ['claimed', 'fulfilled', 'retried', 'review'])
+        key: (data[key] as num?)?.toInt() ?? 0,
+    };
+  }
 }
 
 class SupabaseWalletRepo implements WalletRepo {

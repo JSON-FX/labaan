@@ -276,6 +276,8 @@ abstract class AdminEconomyRepo {
     required int sourceCap,
     required String reason,
   });
+
+  Future<Map<String, int>> runShopFulfillment({int limit = 25});
 }
 
 /// Web-only organizer sponsorship catalog and PayMongo checkout commands.

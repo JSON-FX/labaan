@@ -150,6 +150,8 @@ development environment, not merely drawn as screens.
       exposing provider references, payloads, or reconciliation internals
 - [x] Add capped, idempotent, audited platform/brand Victory Point funding from
       the web super-admin dashboard without granting a personal wallet balance
+- [x] Add a bounded super-admin Shop fulfillment action backed by the existing
+      leased, idempotent delivery/retry/review workflow
 - [x] Add a super-admin-only PayMongo top-up reconciliation view with provider,
       ledger, audit, mismatch, stale-order, and manual-review signals
 - [x] Add fail-closed environment/platform feature flags for Wallet entry,

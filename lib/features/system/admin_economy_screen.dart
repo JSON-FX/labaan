@@ -325,6 +325,53 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
     }
   }
 
+  Future<void> _runShopFulfillment(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Run Shop fulfillment'),
+        content: const Text(
+          'Claim up to 25 queued or retryable Shop items. Internal '
+          'entitlements are delivered idempotently; unsupported or exhausted '
+          'work moves to review.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('RUN'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      final result = await ref
+          .read(adminEconomyRepoProvider)
+          .runShopFulfillment();
+      ref.invalidate(adminEconomyDashboardProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Claimed ${result['claimed']} · fulfilled ${result['fulfilled']} '
+              '· retrying ${result['retried']} · review ${result['review']}',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not run Shop fulfillment.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboard = ref.watch(adminEconomyDashboardProvider);
@@ -411,15 +458,26 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
                   ),
                   const SizedBox(height: 8),
                   LbCard(
-                    child: Wrap(
-                      spacing: 20,
-                      runSpacing: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final entry in data.actionCounts.entries)
-                          Text(
-                            '${entry.key.toUpperCase()}  ${entry.value}',
-                            style: LbType.bodySm,
-                          ),
+                        Wrap(
+                          spacing: 20,
+                          runSpacing: 12,
+                          children: [
+                            for (final entry in data.actionCounts.entries)
+                              Text(
+                                '${entry.key.toUpperCase()}  ${entry.value}',
+                                style: LbType.bodySm,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          onPressed: () => _runShopFulfillment(context, ref),
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text('RUN SHOP FULFILLMENT'),
+                        ),
                       ],
                     ),
                   ),

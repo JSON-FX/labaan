@@ -423,7 +423,10 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 - [ ] Build wallet, top-up, sponsor, reward, and Shop operational dashboards.
   - [x] Add a web-only super-admin foundation with business KPIs, searchable
         actionable reconciliation records, risk resolution, and audited wallet
-        adjustments. Provider retry and fulfillment controls remain.
+        adjustments.
+  - [x] Add a bounded super-admin Shop fulfillment runner using the existing
+        leased, idempotent delivery/retry/review commands. Provider settlement
+        remains webhook-authoritative and is deliberately not manually replayed.
 - [x] Require reasons and immutable audit entries for admin adjustments.
 - [x] Add fraud, velocity, duplicate-account, refund-deficit, and abuse review.
 - [x] Add economy reporting for issuance, spending, outstanding liability,
