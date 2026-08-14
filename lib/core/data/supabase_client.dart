@@ -28,12 +28,18 @@ class Lb {
     defaultValue: 'sb_publishable_4n8s3GgG8LQwKuTUR6aJmA_E2SH_3qn',
   );
   static const _forceMocks = bool.fromEnvironment('USE_MOCK_BACKEND');
+  static const _environment = String.fromEnvironment('LABAAN_ENVIRONMENT');
 
   static bool get configured => _url.isNotEmpty && _anonKey.isNotEmpty;
   static bool get _isAutomatedTest =>
       Platform.environment['FLUTTER_TEST'] == 'true';
   static bool get useSupabase =>
       configured && !_forceMocks && !_isAutomatedTest;
+  static String get environment => _environment.isNotEmpty
+      ? _environment
+      : _url == 'https://xmbfzcgejpzvgrfvvfyi.supabase.co'
+      ? 'development'
+      : 'production';
 
   static Future<void> init() async {
     if (!useSupabase) return;

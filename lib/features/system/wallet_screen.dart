@@ -102,6 +102,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     final wallet = ref.watch(walletProvider);
+    final features = ref.watch(economyFeaturesProvider).asData?.value;
     final topupPlatform = paymongoTopupPlatform(
       isWeb: kIsWeb,
       targetPlatform: defaultTargetPlatform,
@@ -157,10 +158,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             wallet: data,
             filter: _filter,
             onFilter: (value) => setState(() => _filter = value),
-            onTopup: topupPlatform == null
+            onTopup:
+                topupPlatform == null ||
+                    !(features?.isEnabled(LbEconomyFeature.creditTopup) ??
+                        false)
                 ? null
                 : () => unawaited(_openTopup(topupPlatform)),
-            onShop: currentShopPlatform == null
+            onShop:
+                currentShopPlatform == null ||
+                    !(features?.isEnabled(LbEconomyFeature.shop) ?? false)
                 ? null
                 : () => context.push('/shop'),
           ),

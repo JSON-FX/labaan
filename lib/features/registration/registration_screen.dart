@@ -182,6 +182,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         : ref.watch(teamsForUserProvider(user.id)).value ?? const <LbTeam>[];
     final selectedTeam = teams.isEmpty ? null : teams.first;
     final wallet = ref.watch(walletProvider).value;
+    final walletRegistrationEnabled =
+        ref
+            .watch(economyFeaturesProvider)
+            .asData
+            ?.value
+            .isEnabled(LbEconomyFeature.walletRegistration) ??
+        false;
     final creditBalance = wallet
         ?.balanceFor(LbWalletCurrency.entryCredit)
         .balance;
@@ -346,6 +353,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                       rewardRuleReady: t.hasRewardRule,
                       onPressed:
                           _submitting ||
+                              !walletRegistrationEnabled ||
                               !t.hasRewardRule ||
                               creditBalance == null ||
                               creditBalance < (t.entryCreditCost ?? 0)

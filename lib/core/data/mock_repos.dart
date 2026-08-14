@@ -737,6 +737,22 @@ class MockSettingsRepo implements SettingsRepo {
   }
 }
 
+class MockEconomyFeatureFlagsRepo implements EconomyFeatureFlagsRepo {
+  @override
+  Future<LbEconomyFeatures> forPlatform({
+    required String environment,
+    required LbClientPlatform platform,
+  }) async {
+    final direct = platform != LbClientPlatform.ios;
+    return LbEconomyFeatures({
+      LbEconomyFeature.walletRegistration: true,
+      LbEconomyFeature.creditTopup: direct,
+      LbEconomyFeature.organizerSponsorship: platform == LbClientPlatform.web,
+      LbEconomyFeature.shop: direct,
+    }, const {});
+  }
+}
+
 class MockWalletRepo implements WalletRepo {
   MockWalletRepo([MockWalletState? state])
     : _state = state ?? MockWalletState();

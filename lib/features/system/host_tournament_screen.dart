@@ -97,6 +97,9 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final features = ref.watch(economyFeaturesProvider).asData?.value;
+    final sponsorshipEnabled =
+        features?.isEnabled(LbEconomyFeature.organizerSponsorship) ?? false;
     final session = ref.watch(currentUserProvider);
     return Scaffold(
       appBar: AppBar(
@@ -138,7 +141,7 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
               ],
             ),
           ),
-          if (kIsWeb) ...[
+          if (kIsWeb && sponsorshipEnabled) ...[
             const SizedBox(height: 20),
             session.when(
               loading: () => const Center(child: CircularProgressIndicator()),

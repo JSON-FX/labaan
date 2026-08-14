@@ -244,6 +244,13 @@ abstract class WalletRepo {
   });
 }
 
+abstract class EconomyFeatureFlagsRepo {
+  Future<LbEconomyFeatures> forPlatform({
+    required String environment,
+    required LbClientPlatform platform,
+  });
+}
+
 /// Web-only organizer sponsorship catalog and PayMongo checkout commands.
 abstract class HostSponsorRepo {
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId);

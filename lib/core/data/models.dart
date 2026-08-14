@@ -758,6 +758,27 @@ enum LbWalletTransactionKind {
   adminAdjustment,
 }
 
+enum LbEconomyFeature {
+  walletRegistration,
+  creditTopup,
+  organizerSponsorship,
+  shop,
+}
+
+enum LbClientPlatform { web, androidDirect, ios }
+
+@immutable
+class LbEconomyFeatures {
+  const LbEconomyFeatures(this.enabled, this.messages);
+
+  final Map<LbEconomyFeature, bool> enabled;
+  final Map<LbEconomyFeature, String> messages;
+
+  bool isEnabled(LbEconomyFeature feature) => enabled[feature] ?? false;
+  String messageFor(LbEconomyFeature feature) =>
+      messages[feature] ?? 'This feature is temporarily unavailable.';
+}
+
 @immutable
 class LbWalletBalance {
   const LbWalletBalance({

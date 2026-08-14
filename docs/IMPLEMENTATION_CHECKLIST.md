@@ -148,6 +148,9 @@ development environment, not merely drawn as screens.
       same-tab web checkout, safe app links, and authoritative wallet refresh
 - [x] Add a super-admin-only PayMongo top-up reconciliation view with provider,
       ledger, audit, mismatch, stale-order, and manual-review signals
+- [x] Add fail-closed environment/platform feature flags for Wallet entry,
+      Credit top-up, organizer sponsorship, and Shop; enforce them server-side
+      and hide disabled Flutter entry points
 - [x] Define provisional immutable streamer sponsor packages and create
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge

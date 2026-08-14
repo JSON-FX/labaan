@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/ranks.dart';
@@ -79,6 +80,28 @@ final walletRepoProvider = Provider<WalletRepo>(
       ? SupabaseWalletRepo(Lb.client)
       : MockWalletRepo(ref.watch(mockWalletStateProvider)),
 );
+
+final economyFeatureFlagsRepoProvider = Provider<EconomyFeatureFlagsRepo>(
+  (ref) => ref.watch(backendEnabledProvider)
+      ? SupabaseEconomyFeatureFlagsRepo(Lb.client)
+      : MockEconomyFeatureFlagsRepo(),
+);
+
+LbClientPlatform get currentClientPlatform {
+  if (kIsWeb) return LbClientPlatform.web;
+  return defaultTargetPlatform == TargetPlatform.android
+      ? LbClientPlatform.androidDirect
+      : LbClientPlatform.ios;
+}
+
+final economyFeaturesProvider = FutureProvider<LbEconomyFeatures>((ref) {
+  return ref
+      .watch(economyFeatureFlagsRepoProvider)
+      .forPlatform(
+        environment: Lb.environment,
+        platform: currentClientPlatform,
+      );
+});
 
 final hostSponsorRepoProvider = Provider<HostSponsorRepo>(
   (ref) => ref.watch(backendEnabledProvider)

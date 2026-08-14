@@ -136,6 +136,8 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       isWeb: kIsWeb,
       targetPlatform: defaultTargetPlatform,
     );
+    final features = ref.watch(economyFeaturesProvider).asData?.value;
+    final isEnabled = features?.isEnabled(LbEconomyFeature.shop) ?? false;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -144,7 +146,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
         ),
         title: const Text('Victory Point Shop'),
       ),
-      body: platform == null
+      body: platform == null || !isEnabled
           ? const _UnavailableShop()
           : RefreshIndicator(
               color: LbColors.lime,

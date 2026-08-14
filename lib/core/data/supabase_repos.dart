@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/badges.dart';
@@ -31,6 +32,12 @@ T _enumFromSnake<T extends Enum>(List<T> values, String value) {
 }
 
 int _centavosToPhp(Object? value) => ((value as num? ?? 0) / 100).round();
+
+String get _clientPlatform => kIsWeb
+    ? 'web'
+    : defaultTargetPlatform == TargetPlatform.android
+    ? 'android_direct'
+    : 'ios';
 
 TournamentTier _tierFromName(Object? value) {
   final name = value?.toString().toLowerCase();
@@ -665,6 +672,7 @@ class SupabaseRegistrationRepo implements RegistrationRepo {
       body: {
         'tournamentId': tournamentId,
         'teamId': teamId,
+        'platform': _clientPlatform,
         'idempotencyKey': idempotencyKey,
       },
     );
@@ -1138,6 +1146,37 @@ class SupabaseSettingsRepo implements SettingsRepo {
       retentionUntil: optionalDate('retention_until'),
       reviewReason: row['review_reason'] as String?,
     );
+  }
+}
+
+class SupabaseEconomyFeatureFlagsRepo implements EconomyFeatureFlagsRepo {
+  SupabaseEconomyFeatureFlagsRepo(this._client);
+  final SupabaseClient _client;
+
+  @override
+  Future<LbEconomyFeatures> forPlatform({
+    required String environment,
+    required LbClientPlatform platform,
+  }) async {
+    final rows = await _client
+        .from('economy_feature_flags')
+        .select('feature_key, is_enabled, public_message')
+        .eq('environment', environment)
+        .eq('platform', platform.snake);
+    final enabled = <LbEconomyFeature, bool>{};
+    final messages = <LbEconomyFeature, String>{};
+    for (final value in rows) {
+      final row = _map(value);
+      final feature = _enumFromSnake(
+        LbEconomyFeature.values,
+        row['feature_key'] as String,
+      );
+      enabled[feature] = row['is_enabled'] as bool? ?? false;
+      messages[feature] =
+          row['public_message'] as String? ??
+          'This feature is temporarily unavailable.';
+    }
+    return LbEconomyFeatures(enabled, messages);
   }
 }
 

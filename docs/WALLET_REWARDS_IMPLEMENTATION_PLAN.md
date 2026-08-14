@@ -416,11 +416,14 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
 ### Phase 7 - Admin, rollout, and legacy retirement
 
 - [ ] Build wallet, top-up, sponsor, reward, and Shop operational dashboards.
-- [ ] Require reasons and immutable audit entries for admin adjustments.
+- [x] Require reasons and immutable audit entries for admin adjustments.
 - [ ] Add fraud, velocity, duplicate-account, refund-deficit, and abuse review.
 - [ ] Add economy reporting for issuance, spending, outstanding liability,
       redemption cost, and provider reconciliation.
-- [ ] Roll out behind environment and platform feature flags.
+  - [x] Add the super-admin reporting foundation for account integrity, provider
+        and sponsor reconciliation, reward/Shop drift, currency liability, and
+        daily wallet flows; redemption-cost inputs and operator UI remain.
+- [x] Roll out behind environment and platform feature flags.
 - [ ] Complete local, hosted development, PayMongo test, StoreKit sandbox,
       TestFlight, and physical-device pilots.
 - [ ] Migrate new tournaments to the wallet economy.
