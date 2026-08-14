@@ -227,7 +227,8 @@ Requirements:
 ### Read APIs
 
 - [x] Replace the current cash-flow `get_my_wallet` response with Wallet v2.
-- [ ] Add safe provider pending-state summaries when top-ups exist.
+- [x] Add safe player-owned pending/review top-up summaries without provider
+      identifiers, payloads, or reconciliation details.
 - [x] Return both balances and cursor-paginated settled activity.
 - [x] Include currency and transaction type on every activity entry.
 - [x] Never return webhook payloads, full provider details, or another user's

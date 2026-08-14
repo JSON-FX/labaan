@@ -146,6 +146,8 @@ development environment, not merely drawn as screens.
 - [x] Add server-priced PayMongo Credit top-ups for direct Android and web,
       with iOS-hidden entry points, in-app/native-wallet checkout fallback,
       same-tab web checkout, safe app links, and authoritative wallet refresh
+- [x] Show player-safe pending/review top-up summaries in Wallet without
+      exposing provider references, payloads, or reconciliation internals
 - [x] Add a super-admin-only PayMongo top-up reconciliation view with provider,
       ledger, audit, mismatch, stale-order, and manual-review signals
 - [x] Add fail-closed environment/platform feature flags for Wallet entry,

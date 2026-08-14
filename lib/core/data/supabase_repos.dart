@@ -1378,15 +1378,18 @@ class SupabaseWalletRepo implements WalletRepo {
     int limit = 50,
     LbWalletCursor? before,
   }) async {
-    final value = await _client.rpc(
-      'get_my_wallet',
-      params: {
-        'p_limit': limit,
-        'p_before_created_at': before?.createdAt.toUtc().toIso8601String(),
-        'p_before_entry_id': before?.entryId,
-      },
-    );
-    final json = _map(value);
+    final values = await Future.wait<dynamic>([
+      _client.rpc(
+        'get_my_wallet',
+        params: {
+          'p_limit': limit,
+          'p_before_created_at': before?.createdAt.toUtc().toIso8601String(),
+          'p_before_entry_id': before?.entryId,
+        },
+      ),
+      _client.rpc('get_my_pending_topups'),
+    ]);
+    final json = _map(values[0]);
     final version = (json['version'] as num?)?.toInt();
     if (version != 2) {
       throw FormatException('Unsupported wallet response version: $version');
@@ -1402,6 +1405,18 @@ class SupabaseWalletRepo implements WalletRepo {
         for (final value in (json['transactions'] as List?) ?? const [])
           if (value is Map)
             _walletTransactionFromJson(value.cast<String, dynamic>()),
+      ],
+      pendingTopups: [
+        for (final value in (values[1] as List?) ?? const [])
+          if (value is Map)
+            LbPendingTopup(
+              id: value['id'] as String,
+              status: value['status'] as String,
+              creditAmount: (value['creditAmount'] as num).toInt(),
+              priceCentavos: (value['priceCentavos'] as num).toInt(),
+              paymentMethod: value['paymentMethod'] as String,
+              updatedAt: DateTime.parse(value['updatedAt'] as String),
+            ),
       ],
       nextCursor: switch (json['nextCursor']) {
         final Map value => LbWalletCursor(

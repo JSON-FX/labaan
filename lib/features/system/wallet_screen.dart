@@ -224,6 +224,41 @@ class _WalletBody extends StatelessWidget {
           'Credits pay tournament entry fees. Victory Points are earned as rewards and can be spent in the Shop. Neither balance is cash or withdrawable.',
           style: LbType.bodyXs.copyWith(color: LbColors.textMuted),
         ),
+        if (wallet.pendingTopups.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          const SectionLabel('Top-ups in progress'),
+          const SizedBox(height: 10),
+          for (final topup in wallet.pendingTopups) ...[
+            LbCard(
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule_rounded, color: LbColors.gold),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${topup.creditAmount} Credits · ${topup.paymentMethod.toUpperCase()}',
+                          style: LbType.bodySm,
+                        ),
+                        Text(
+                          topup.status == 'review'
+                              ? 'Payment is under review. No additional payment is needed.'
+                              : 'Waiting for verified payment confirmation.',
+                          style: LbType.bodyXs.copyWith(
+                            color: LbColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
         const SizedBox(height: 24),
         const SectionLabel('Transaction history'),
         const SizedBox(height: 10),

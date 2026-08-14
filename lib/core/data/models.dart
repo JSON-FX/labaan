@@ -898,12 +898,14 @@ class LbWallet {
     required this.version,
     required this.balances,
     required this.transactions,
+    this.pendingTopups = const [],
     this.nextCursor,
   });
 
   final int version;
   final List<LbWalletBalance> balances;
   final List<LbWalletTransaction> transactions;
+  final List<LbPendingTopup> pendingTopups;
   final LbWalletCursor? nextCursor;
 
   LbWalletBalance balanceFor(LbWalletCurrency currency) => balances.firstWhere(
@@ -917,6 +919,25 @@ class LbWallet {
       balance: 0,
     ),
   );
+}
+
+@immutable
+class LbPendingTopup {
+  const LbPendingTopup({
+    required this.id,
+    required this.status,
+    required this.creditAmount,
+    required this.priceCentavos,
+    required this.paymentMethod,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String status;
+  final int creditAmount;
+  final int priceCentavos;
+  final String paymentMethod;
+  final DateTime updatedAt;
 }
 
 @immutable
