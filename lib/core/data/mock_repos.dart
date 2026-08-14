@@ -937,6 +937,13 @@ class MockHostSponsorRepo implements HostSponsorRepo {
       _delay('mock-wallet-tournament');
 
   @override
+  Future<void> publishTournament({
+    required String tournamentId,
+    required DateTime registrationLocksAt,
+    required DateTime startsAt,
+  }) async {}
+
+  @override
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId) => _delay(
     LbHostSponsorPortal(
       tournaments: [LbFixtures.caviteOpen],

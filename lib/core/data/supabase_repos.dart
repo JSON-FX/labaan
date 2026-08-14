@@ -1628,6 +1628,26 @@ class SupabaseHostSponsorRepo implements HostSponsorRepo {
   }
 
   @override
+  Future<void> publishTournament({
+    required String tournamentId,
+    required DateTime registrationLocksAt,
+    required DateTime startsAt,
+  }) async {
+    await _client.functions
+        .invoke(
+          'organizer-tournament-publish',
+          body: {
+            'tournamentId': tournamentId,
+            'registrationLocksAt': registrationLocksAt
+                .toUtc()
+                .toIso8601String(),
+            'startsAt': startsAt.toUtc().toIso8601String(),
+          },
+        )
+        .then(_functionData);
+  }
+
+  @override
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId) async {
     final responses = await Future.wait<dynamic>([
       _client

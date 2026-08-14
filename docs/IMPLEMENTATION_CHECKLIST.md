@@ -169,6 +169,8 @@ development environment, not merely drawn as screens.
 - [x] Migrate organizer-facing tournament creation to audited Wallet v2 drafts
       with explicit Credit fees, team limits, underfill behavior, reward rate,
       pool cap, and pre-published placement split while preserving legacy rows
+- [x] Add audited organizer scheduling and publication for complete Wallet v2
+      drafts, opening Credit registration without changing legacy tournaments
 - [x] Publish in-app product drafts for Wallet tournament rules and organizer
       sponsorship terms, with counsel/provider review clearly outstanding
 - [x] Define provisional immutable streamer sponsor packages and create

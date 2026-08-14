@@ -286,6 +286,12 @@ abstract class HostSponsorRepo {
 
   Future<String> createTournamentDraft(LbWalletTournamentDraft draft);
 
+  Future<void> publishTournament({
+    required String tournamentId,
+    required DateTime registrationLocksAt,
+    required DateTime startsAt,
+  });
+
   Future<LbSponsorCheckout> createCheckout({
     required String tournamentId,
     required LbSponsorPackage package,

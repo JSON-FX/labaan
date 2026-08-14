@@ -250,6 +250,77 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
     }
   }
 
+  Future<DateTime?> _pickDateTime(DateTime initial) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date == null || !mounted) return null;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
+  Future<void> _publishTournament(LbTournament tournament) async {
+    final lockTime = await _pickDateTime(
+      DateTime.now().add(const Duration(days: 6)),
+    );
+    if (lockTime == null || !mounted) return;
+    final startTime = await _pickDateTime(
+      lockTime.add(const Duration(hours: 1)),
+    );
+    if (startTime == null || !mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Publish tournament?'),
+        content: Text(
+          'Registration locks ${lockTime.toLocal()}\n'
+          'Tournament starts ${startTime.toLocal()}\n\n'
+          'Publishing opens Credit registration and locks the published '
+          'reward rules after the first confirmed entry.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('PUBLISH'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref
+          .read(hostSponsorRepoProvider)
+          .publishTournament(
+            tournamentId: tournament.id,
+            registrationLocksAt: lockTime,
+            startsAt: startTime,
+          );
+      ref.invalidate(hostSponsorPortalProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tournament registration is open.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not publish this tournament.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final features = ref.watch(economyFeaturesProvider).asData?.value;
@@ -335,6 +406,7 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
                       onAttributionChanged: (value) =>
                           _changeSelection(() => _showAttribution = value),
                       onSubmit: _startCheckout,
+                      onPublish: _publishTournament,
                     ),
             ),
           ],
@@ -404,6 +476,7 @@ class _SponsorPortal extends StatelessWidget {
     required this.onMethodChanged,
     required this.onAttributionChanged,
     required this.onSubmit,
+    required this.onPublish,
   });
 
   final AsyncValue<LbHostSponsorPortal> portal;
@@ -417,6 +490,7 @@ class _SponsorPortal extends StatelessWidget {
   final ValueChanged<PayMethod> onMethodChanged;
   final ValueChanged<bool> onAttributionChanged;
   final Future<void> Function(LbTournament, LbSponsorPackage) onSubmit;
+  final Future<void> Function(LbTournament) onPublish;
 
   @override
   Widget build(BuildContext context) => portal.when(
@@ -532,6 +606,19 @@ class _SponsorPortal extends StatelessWidget {
                   onPressed: submitting
                       ? null
                       : () => onSubmit(selectedTournament, selectedPackage),
+                ),
+                const SizedBox(height: 8),
+                GhostButton(
+                  label: 'Publish & open registration',
+                  onPressed: submitting
+                      ? null
+                      : () => onPublish(selectedTournament),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Add any sponsor boosts before publishing. Publishing ends '
+                  'draft sponsorship and opens Credit registration.',
+                  style: LbType.metaSm.copyWith(color: LbColors.textMuted),
                 ),
               ],
             ),

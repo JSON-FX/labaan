@@ -442,6 +442,8 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
       TestFlight, and physical-device pilots.
 - [x] Migrate organizer-facing new tournament drafts to the wallet economy;
       retain service-only legacy maintenance until obligations are settled.
+  - [x] Allow the owning organizer to schedule and publish a complete draft,
+        opening registration only when lock/start times pass server validation.
 - [ ] Settle all legacy cash-payment and payout obligations.
 - [ ] Remove legacy UI and endpoints in a separately reviewed cleanup.
 - [ ] Update `docs/IMPLEMENTATION_CHECKLIST.md` after every completed slice.
