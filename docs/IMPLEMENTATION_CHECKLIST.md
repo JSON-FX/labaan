@@ -154,5 +154,7 @@ development environment, not merely drawn as screens.
       Function with ownership, draft-state, cap, URL, and idempotency checks
 - [x] Route signed sponsor payments through the global provider receipt and
       settle exactly one immutable tournament allocation with no wallet credit
+- [x] Lock entry-scaled, organizer, platform, and brand reward sources into one
+      exact, capped final tournament pool
 - [ ] Add Apple IAP purchase and server verification for iOS Credits
 - [ ] Add tournament Victory Point rewards and Shop spending
