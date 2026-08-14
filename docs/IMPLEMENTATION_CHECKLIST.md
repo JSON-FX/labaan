@@ -148,5 +148,7 @@ development environment, not merely drawn as screens.
       same-tab web checkout, safe app links, and authoritative wallet refresh
 - [x] Add a super-admin-only PayMongo top-up reconciliation view with provider,
       ledger, audit, mismatch, stale-order, and manual-review signals
+- [x] Define provisional immutable streamer sponsor packages and create
+      tournament-bound sponsor order/allocation/provider-event schemas
 - [ ] Add Apple IAP purchase and server verification for iOS Credits
 - [ ] Add tournament Victory Point rewards and Shop spending

@@ -359,7 +359,11 @@ under duplicate delivery, and refund/reversal behavior is proven.
 
 ### Phase 4 - Streamer sponsorship
 
-- [ ] Build organizer reward-package configuration.
+- [x] Define provisional development sponsor packages, immutable revisions,
+      per-package limits, a 1,000 VP tournament cap, eligibility, attribution,
+      and refund-to-original-method policy pending provider/legal approval.
+- [x] Create organizer sponsor-order, provider-event subject, and immutable
+      tournament sponsor-allocation schemas with RLS and audit history.
 - [ ] Implement sponsor orders and PayMongo checkout on the Host web portal.
 - [ ] Lock paid allocations to one tournament.
 - [ ] Combine entry-scaled, organizer, platform, and brand allocations without
