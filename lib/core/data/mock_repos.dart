@@ -753,6 +753,39 @@ class MockEconomyFeatureFlagsRepo implements EconomyFeatureFlagsRepo {
   }
 }
 
+class MockAdminEconomyRepo implements AdminEconomyRepo {
+  @override
+  Future<LbAdminEconomyDashboard> dashboard() async =>
+      const LbAdminEconomyDashboard(
+        summary: {
+          'outstanding_credits': 12500,
+          'awarded_victory_points': 4200,
+          'redeemed_victory_points': 900,
+          'unfulfilled_expected_cost_centavos': 0,
+        },
+        actionCounts: {'topups': 0, 'sponsors': 0, 'rewards': 0, 'shop': 0},
+        actionItems: [],
+        riskCases: [],
+      );
+
+  @override
+  Future<void> adjustWallet({
+    required String targetUserId,
+    required LbWalletCurrency currency,
+    required bool grant,
+    required int amount,
+    required String reason,
+    required String idempotencyKey,
+  }) async {}
+
+  @override
+  Future<void> resolveRiskCase({
+    required String caseId,
+    required bool dismissed,
+    required String reason,
+  }) async {}
+}
+
 class MockWalletRepo implements WalletRepo {
   MockWalletRepo([MockWalletState? state])
     : _state = state ?? MockWalletState();

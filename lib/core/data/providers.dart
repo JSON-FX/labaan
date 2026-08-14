@@ -87,6 +87,12 @@ final economyFeatureFlagsRepoProvider = Provider<EconomyFeatureFlagsRepo>(
       : MockEconomyFeatureFlagsRepo(),
 );
 
+final adminEconomyRepoProvider = Provider<AdminEconomyRepo>(
+  (ref) => ref.watch(backendEnabledProvider)
+      ? SupabaseAdminEconomyRepo(Lb.client)
+      : MockAdminEconomyRepo(),
+);
+
 LbClientPlatform get currentClientPlatform {
   if (kIsWeb) return LbClientPlatform.web;
   return defaultTargetPlatform == TargetPlatform.android
@@ -102,6 +108,11 @@ final economyFeaturesProvider = FutureProvider<LbEconomyFeatures>((ref) {
         platform: currentClientPlatform,
       );
 });
+
+final adminEconomyDashboardProvider =
+    FutureProvider.autoDispose<LbAdminEconomyDashboard>((ref) {
+      return ref.watch(adminEconomyRepoProvider).dashboard();
+    });
 
 final hostSponsorRepoProvider = Provider<HostSponsorRepo>(
   (ref) => ref.watch(backendEnabledProvider)

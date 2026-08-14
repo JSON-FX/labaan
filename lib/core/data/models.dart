@@ -780,6 +780,69 @@ class LbEconomyFeatures {
 }
 
 @immutable
+class LbEconomyRiskCase {
+  const LbEconomyRiskCase({
+    required this.id,
+    required this.signalType,
+    required this.severity,
+    required this.status,
+    required this.occurrenceCount,
+    required this.lastDetectedAt,
+    this.userId,
+    this.referenceType,
+    this.referenceId,
+  });
+
+  final String id;
+  final String? userId;
+  final String signalType;
+  final String severity;
+  final String status;
+  final int occurrenceCount;
+  final String? referenceType;
+  final String? referenceId;
+  final DateTime lastDetectedAt;
+}
+
+@immutable
+class LbAdminEconomyDashboard {
+  const LbAdminEconomyDashboard({
+    required this.summary,
+    required this.actionCounts,
+    required this.actionItems,
+    required this.riskCases,
+  });
+
+  final Map<String, num> summary;
+  final Map<String, int> actionCounts;
+  final List<LbEconomyActionItem> actionItems;
+  final List<LbEconomyRiskCase> riskCases;
+}
+
+@immutable
+class LbEconomyActionItem {
+  const LbEconomyActionItem({
+    required this.category,
+    required this.id,
+    required this.state,
+    required this.status,
+    required this.updatedAt,
+    this.userId,
+    this.tournamentId,
+    this.amount,
+  });
+
+  final String category;
+  final String id;
+  final String state;
+  final String status;
+  final DateTime updatedAt;
+  final String? userId;
+  final String? tournamentId;
+  final int? amount;
+}
+
+@immutable
 class LbWalletBalance {
   const LbWalletBalance({
     required this.currency,

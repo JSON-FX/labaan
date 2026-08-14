@@ -251,6 +251,23 @@ abstract class EconomyFeatureFlagsRepo {
   });
 }
 
+abstract class AdminEconomyRepo {
+  Future<LbAdminEconomyDashboard> dashboard();
+  Future<void> resolveRiskCase({
+    required String caseId,
+    required bool dismissed,
+    required String reason,
+  });
+  Future<void> adjustWallet({
+    required String targetUserId,
+    required LbWalletCurrency currency,
+    required bool grant,
+    required int amount,
+    required String reason,
+    required String idempotencyKey,
+  });
+}
+
 /// Web-only organizer sponsorship catalog and PayMongo checkout commands.
 abstract class HostSponsorRepo {
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId);

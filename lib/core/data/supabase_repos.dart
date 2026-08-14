@@ -1180,6 +1180,195 @@ class SupabaseEconomyFeatureFlagsRepo implements EconomyFeatureFlagsRepo {
   }
 }
 
+class SupabaseAdminEconomyRepo implements AdminEconomyRepo {
+  SupabaseAdminEconomyRepo(this._client);
+  final SupabaseClient _client;
+
+  @override
+  Future<LbAdminEconomyDashboard> dashboard() async {
+    final summaryRow = await _client
+        .from('admin_economy_business_summary')
+        .select()
+        .maybeSingle();
+    Future<List<Map<String, dynamic>>> actionRows(
+      String view,
+      String columns,
+    ) async => [
+      for (final value
+          in await _client
+              .from(view)
+              .select(columns)
+              .eq('requires_action', true)
+              .limit(250))
+        _map(value),
+    ];
+
+    final topupRows = await actionRows(
+      'topup_reconciliation_audit',
+      'topup_order_id, user_id, order_status, reconciliation_state, '
+          'expected_credit_amount, updated_at',
+    );
+    final sponsorRows = await actionRows(
+      'admin_sponsor_reconciliation_audit',
+      'sponsor_order_id, tournament_id, organizer_id, order_status, '
+          'reconciliation_state, expected_reward_points, updated_at',
+    );
+    final rewardRows = await actionRows(
+      'admin_tournament_reward_reconciliation_audit',
+      'tournament_id, tournament_status, reconciliation_state, '
+          'final_reward_pool, reward_pool_locked_at',
+    );
+    final shopRows = await actionRows(
+      'admin_shop_reconciliation_audit',
+      'shop_order_id, user_id, order_status, reconciliation_state, '
+          'total_reward_points, updated_at',
+    );
+    final riskRows = await _client
+        .from('economy_risk_cases')
+        .select(
+          'id, user_id, signal_type, severity, status, occurrence_count, '
+          'reference_type, reference_id, last_detected_at',
+        )
+        .inFilter('status', ['open', 'reviewing'])
+        .order('last_detected_at', ascending: false)
+        .limit(100);
+    final summary = <String, num>{};
+    if (summaryRow != null) {
+      for (final entry in summaryRow.entries) {
+        if (entry.value is num) summary[entry.key] = entry.value as num;
+      }
+    }
+    return LbAdminEconomyDashboard(
+      summary: summary,
+      actionCounts: {
+        'topups': topupRows.length,
+        'sponsors': sponsorRows.length,
+        'rewards': rewardRows.length,
+        'shop': shopRows.length,
+      },
+      actionItems: [
+        for (final row in topupRows)
+          _actionItem(
+            category: 'topup',
+            row: row,
+            idKey: 'topup_order_id',
+            statusKey: 'order_status',
+            amountKey: 'expected_credit_amount',
+          ),
+        for (final row in sponsorRows)
+          _actionItem(
+            category: 'sponsor',
+            row: row,
+            idKey: 'sponsor_order_id',
+            statusKey: 'order_status',
+            userKey: 'organizer_id',
+            amountKey: 'expected_reward_points',
+          ),
+        for (final row in rewardRows)
+          _actionItem(
+            category: 'reward',
+            row: row,
+            idKey: 'tournament_id',
+            statusKey: 'tournament_status',
+            amountKey: 'final_reward_pool',
+            updatedKey: 'reward_pool_locked_at',
+          ),
+        for (final row in shopRows)
+          _actionItem(
+            category: 'shop',
+            row: row,
+            idKey: 'shop_order_id',
+            statusKey: 'order_status',
+            amountKey: 'total_reward_points',
+          ),
+      ],
+      riskCases: [
+        for (final value in riskRows)
+          LbEconomyRiskCase(
+            id: value['id'] as String,
+            userId: value['user_id'] as String?,
+            signalType: value['signal_type'] as String,
+            severity: value['severity'] as String,
+            status: value['status'] as String,
+            occurrenceCount: (value['occurrence_count'] as num).toInt(),
+            referenceType: value['reference_type'] as String?,
+            referenceId: value['reference_id'] as String?,
+            lastDetectedAt: DateTime.parse(value['last_detected_at'] as String),
+          ),
+      ],
+    );
+  }
+
+  LbEconomyActionItem _actionItem({
+    required String category,
+    required Map<String, dynamic> row,
+    required String idKey,
+    required String statusKey,
+    required String amountKey,
+    String userKey = 'user_id',
+    String updatedKey = 'updated_at',
+  }) => LbEconomyActionItem(
+    category: category,
+    id: row[idKey] as String,
+    state: row['reconciliation_state'] as String,
+    status: row[statusKey] as String,
+    updatedAt: row[updatedKey] == null
+        ? DateTime.fromMillisecondsSinceEpoch(0)
+        : DateTime.parse(row[updatedKey] as String),
+    userId: row[userKey] as String?,
+    tournamentId: category == 'reward'
+        ? row[idKey] as String
+        : row['tournament_id'] as String?,
+    amount: (row[amountKey] as num?)?.toInt(),
+  );
+
+  @override
+  Future<void> resolveRiskCase({
+    required String caseId,
+    required bool dismissed,
+    required String reason,
+  }) async {
+    final response = await _client.functions.invoke(
+      'admin-risk-case-resolve',
+      body: {
+        'caseId': caseId,
+        'resolution': dismissed ? 'dismissed' : 'resolved',
+        'reason': reason,
+      },
+    );
+    if (response.status < 200 || response.status >= 300) {
+      throw StateError('Risk case resolution failed');
+    }
+  }
+
+  @override
+  Future<void> adjustWallet({
+    required String targetUserId,
+    required LbWalletCurrency currency,
+    required bool grant,
+    required int amount,
+    required String reason,
+    required String idempotencyKey,
+  }) async {
+    final response = await _client.functions.invoke(
+      'admin-wallet-adjustment',
+      headers: {'Idempotency-Key': idempotencyKey},
+      body: {
+        'targetUserId': targetUserId,
+        'currencyCode': currency.snake,
+        'direction': grant ? 'grant' : 'deduct',
+        'amount': amount,
+        'reasonCode': 'player_support',
+        'reason': reason,
+        'idempotencyKey': idempotencyKey,
+      },
+    );
+    if (response.status < 200 || response.status >= 300) {
+      throw StateError('Wallet adjustment failed');
+    }
+  }
+}
+
 class SupabaseWalletRepo implements WalletRepo {
   SupabaseWalletRepo(this._client);
   final SupabaseClient _client;

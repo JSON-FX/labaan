@@ -157,6 +157,9 @@ development environment, not merely drawn as screens.
 - [x] Add protected Shop cost snapshots and super-admin economy reporting for
       Credit/VP flows, liabilities, provider/sponsor funding and refunds, and
       expected versus recorded redemption cost
+- [x] Add a web-only super-admin economy operations foundation with KPI totals,
+      searchable top-up/sponsor/reward/Shop reconciliation queues, reasoned
+      risk-case resolution, and audited wallet adjustments
 - [x] Define provisional immutable streamer sponsor packages and create
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge
@@ -183,4 +186,4 @@ development environment, not merely drawn as screens.
       posts one compensating Victory Point refund without rewriting purchase
 - [x] Add the direct Android/web Shop UI with wallet balance, catalog details,
       purchase confirmation, order history/status, and cancellation; hide iOS
-- [ ] Add tournament Victory Point rewards and Shop spending
+- [x] Add tournament Victory Point rewards and Shop spending
