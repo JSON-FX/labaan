@@ -432,7 +432,8 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
       review and freeze retained balances without rewriting the ledger.
 - [ ] Complete local, hosted development, PayMongo test, StoreKit sandbox,
       TestFlight, and physical-device pilots.
-- [ ] Migrate new tournaments to the wallet economy.
+- [x] Migrate organizer-facing new tournament drafts to the wallet economy;
+      retain service-only legacy maintenance until obligations are settled.
 - [ ] Settle all legacy cash-payment and payout obligations.
 - [ ] Remove legacy UI and endpoints in a separately reviewed cleanup.
 - [ ] Update `docs/IMPLEMENTATION_CHECKLIST.md` after every completed slice.

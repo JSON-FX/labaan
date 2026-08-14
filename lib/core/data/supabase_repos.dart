@@ -1534,6 +1534,29 @@ class SupabaseHostSponsorRepo implements HostSponsorRepo {
   final SupabaseClient _client;
 
   @override
+  Future<String> createTournamentDraft(LbWalletTournamentDraft draft) async {
+    final response = await _client.functions.invoke(
+      'organizer-tournament-create',
+      body: {
+        'title': draft.title,
+        'game': draft.game,
+        'format': draft.format,
+        'entryCreditCost': draft.entryCreditCost,
+        'maxTeams': draft.maxTeams,
+        'minimumTeams': draft.minimumTeams,
+        'belowMinimumAction': draft.belowMinimumAction,
+        'rewardPointsPerCompetitor': draft.rewardPointsPerCompetitor,
+        'rewardPoolCap': draft.rewardPoolCap,
+        'firstPlaceBps': draft.firstPlaceBps,
+        'secondPlaceBps': draft.secondPlaceBps,
+        'thirdPlaceBps': draft.thirdPlaceBps,
+      },
+    );
+    final data = _functionData(response);
+    return data['id'] as String;
+  }
+
+  @override
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId) async {
     final responses = await Future.wait<dynamic>([
       _client

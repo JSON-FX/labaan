@@ -272,6 +272,8 @@ abstract class AdminEconomyRepo {
 abstract class HostSponsorRepo {
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId);
 
+  Future<String> createTournamentDraft(LbWalletTournamentDraft draft);
+
   Future<LbSponsorCheckout> createCheckout({
     required String tournamentId,
     required LbSponsorPackage package,
@@ -281,6 +283,36 @@ abstract class HostSponsorRepo {
     required Uri successUrl,
     required Uri cancelUrl,
   });
+}
+
+class LbWalletTournamentDraft {
+  const LbWalletTournamentDraft({
+    required this.title,
+    required this.game,
+    required this.format,
+    required this.entryCreditCost,
+    required this.maxTeams,
+    required this.minimumTeams,
+    required this.belowMinimumAction,
+    required this.rewardPointsPerCompetitor,
+    required this.rewardPoolCap,
+    this.firstPlaceBps = 7000,
+    this.secondPlaceBps = 3000,
+    this.thirdPlaceBps = 0,
+  });
+
+  final String title;
+  final String game;
+  final String format;
+  final int entryCreditCost;
+  final int maxTeams;
+  final int minimumTeams;
+  final String belowMinimumAction;
+  final int rewardPointsPerCompetitor;
+  final int rewardPoolCap;
+  final int firstPlaceBps;
+  final int secondPlaceBps;
+  final int thirdPlaceBps;
 }
 
 abstract class ShopRepo {

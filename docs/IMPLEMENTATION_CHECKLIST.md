@@ -160,6 +160,9 @@ development environment, not merely drawn as screens.
 - [x] Add a web-only super-admin economy operations foundation with KPI totals,
       searchable top-up/sponsor/reward/Shop reconciliation queues, reasoned
       risk-case resolution, and audited wallet adjustments
+- [x] Migrate organizer-facing tournament creation to audited Wallet v2 drafts
+      with explicit Credit fees, team limits, underfill behavior, reward rate,
+      pool cap, and pre-published placement split while preserving legacy rows
 - [x] Define provisional immutable streamer sponsor packages and create
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge

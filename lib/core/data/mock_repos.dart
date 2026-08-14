@@ -913,6 +913,10 @@ class MockHostSponsorRepo implements HostSponsorRepo {
   ];
 
   @override
+  Future<String> createTournamentDraft(LbWalletTournamentDraft draft) =>
+      _delay('mock-wallet-tournament');
+
+  @override
   Future<LbHostSponsorPortal> portalForOrganizer(String organizerId) => _delay(
     LbHostSponsorPortal(
       tournaments: [LbFixtures.caviteOpen],

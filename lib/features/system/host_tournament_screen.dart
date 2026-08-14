@@ -33,6 +33,161 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
   bool _submitting = false;
   String? _idempotencyKey;
 
+  Future<void> _createTournamentDraft() async {
+    final title = TextEditingController();
+    final game = TextEditingController(text: 'MLBB');
+    final entryCost = TextEditingController(text: '100');
+    final maxTeams = TextEditingController(text: '8');
+    final minimumTeams = TextEditingController(text: '4');
+    final rewardRate = TextEditingController(text: '100');
+    final rewardCap = TextEditingController(text: '800');
+    var format = 'single_elimination';
+    var underfill = 'cancel';
+    final draft = await showDialog<LbWalletTournamentDraft>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('New Wallet tournament'),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: title,
+                    decoration: const InputDecoration(labelText: 'Title'),
+                  ),
+                  TextField(
+                    controller: game,
+                    decoration: const InputDecoration(labelText: 'Game'),
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: format,
+                    decoration: const InputDecoration(labelText: 'Format'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'single_elimination',
+                        child: Text('Single elimination'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'double_elimination',
+                        child: Text('Double elimination'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => format = value ?? format),
+                  ),
+                  _NumberField(controller: entryCost, label: 'Entry Credits'),
+                  _NumberField(controller: maxTeams, label: 'Maximum teams'),
+                  _NumberField(
+                    controller: minimumTeams,
+                    label: 'Minimum teams',
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: underfill,
+                    decoration: const InputDecoration(
+                      labelText: 'Below minimum',
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'cancel', child: Text('Cancel')),
+                      DropdownMenuItem(
+                        value: 'postpone',
+                        child: Text('Postpone'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => underfill = value ?? underfill),
+                  ),
+                  _NumberField(
+                    controller: rewardRate,
+                    label: 'Victory Points per confirmed team',
+                  ),
+                  _NumberField(
+                    controller: rewardCap,
+                    label: 'Victory Point pool cap',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Placement split: 70% first · 30% second. The complete '
+                    'formula is locked before registration opens.',
+                    style: LbType.metaSm,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () {
+                final values = [
+                  int.tryParse(entryCost.text),
+                  int.tryParse(maxTeams.text),
+                  int.tryParse(minimumTeams.text),
+                  int.tryParse(rewardRate.text),
+                  int.tryParse(rewardCap.text),
+                ];
+                if (title.text.trim().length < 4 ||
+                    game.text.trim().length < 2 ||
+                    values.any((value) => value == null || value <= 0)) {
+                  return;
+                }
+                Navigator.pop(
+                  context,
+                  LbWalletTournamentDraft(
+                    title: title.text.trim(),
+                    game: game.text.trim(),
+                    format: format,
+                    entryCreditCost: values[0]!,
+                    maxTeams: values[1]!,
+                    minimumTeams: values[2]!,
+                    belowMinimumAction: underfill,
+                    rewardPointsPerCompetitor: values[3]!,
+                    rewardPoolCap: values[4]!,
+                  ),
+                );
+              },
+              child: const Text('CREATE DRAFT'),
+            ),
+          ],
+        ),
+      ),
+    );
+    for (final controller in [
+      title,
+      game,
+      entryCost,
+      maxTeams,
+      minimumTeams,
+      rewardRate,
+      rewardCap,
+    ]) {
+      controller.dispose();
+    }
+    if (draft == null || !mounted) return;
+    try {
+      await ref.read(hostSponsorRepoProvider).createTournamentDraft(draft);
+      ref.invalidate(hostSponsorPortalProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wallet tournament draft created.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not create the tournament draft.'),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _openGabRegistry(BuildContext context) async {
     final uri = Uri.parse('https://gab.gov.ph/');
     try {
@@ -141,6 +296,13 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
               ],
             ),
           ),
+          if (kIsWeb) ...[
+            const SizedBox(height: 12),
+            SlantButton(
+              label: 'Create Wallet tournament',
+              onPressed: _createTournamentDraft,
+            ),
+          ],
           if (kIsWeb && sponsorshipEnabled) ...[
             const SizedBox(height: 20),
             session.when(
@@ -208,6 +370,20 @@ class _HostTournamentScreenState extends ConsumerState<HostTournamentScreen> {
       ),
     );
   }
+}
+
+class _NumberField extends StatelessWidget {
+  const _NumberField({required this.controller, required this.label});
+
+  final TextEditingController controller;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    keyboardType: TextInputType.number,
+    decoration: InputDecoration(labelText: label),
+  );
 }
 
 class _SponsorPortal extends StatelessWidget {
