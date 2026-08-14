@@ -152,5 +152,7 @@ development environment, not merely drawn as screens.
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge
       Function with ownership, draft-state, cap, URL, and idempotency checks
+- [x] Route signed sponsor payments through the global provider receipt and
+      settle exactly one immutable tournament allocation with no wallet credit
 - [ ] Add Apple IAP purchase and server verification for iOS Credits
 - [ ] Add tournament Victory Point rewards and Shop spending

@@ -365,7 +365,8 @@ under duplicate delivery, and refund/reversal behavior is proven.
 - [x] Create organizer sponsor-order, provider-event subject, and immutable
       tournament sponsor-allocation schemas with RLS and audit history.
 - [ ] Implement sponsor orders and PayMongo checkout on the Host web portal.
-- [ ] Lock paid allocations to one tournament.
+- [x] Settle signed PayMongo sponsor payments into exactly one immutable
+      tournament-bound allocation without crediting the organizer wallet.
 - [ ] Combine entry-scaled, organizer, platform, and brand allocations without
       exceeding configured caps.
 - [ ] Implement cancellation refund/Host Credit rules.
