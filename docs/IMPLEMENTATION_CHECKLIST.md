@@ -154,6 +154,9 @@ development environment, not merely drawn as screens.
 - [x] Add idempotency-aware economy velocity limits and a unified super-admin
       risk queue for refund deficits, provider mismatches, duplicate-account
       signals, and reasoned audited resolution
+- [x] Add protected Shop cost snapshots and super-admin economy reporting for
+      Credit/VP flows, liabilities, provider/sponsor funding and refunds, and
+      expected versus recorded redemption cost
 - [x] Define provisional immutable streamer sponsor packages and create
       tournament-bound sponsor order/allocation/provider-event schemas
 - [x] Add retry-safe organizer PayMongo sponsor checkout commands and Edge
