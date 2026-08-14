@@ -779,6 +779,17 @@ class MockAdminEconomyRepo implements AdminEconomyRepo {
   }) async {}
 
   @override
+  Future<void> allocateRewardFunding({
+    required String tournamentId,
+    required bool brandSponsored,
+    required String fundingReference,
+    String? attributionName,
+    required int amount,
+    required int sourceCap,
+    required String reason,
+  }) async {}
+
+  @override
   Future<void> resolveRiskCase({
     required String caseId,
     required bool dismissed,

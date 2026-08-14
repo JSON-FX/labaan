@@ -148,6 +148,8 @@ development environment, not merely drawn as screens.
       same-tab web checkout, safe app links, and authoritative wallet refresh
 - [x] Show player-safe pending/review top-up summaries in Wallet without
       exposing provider references, payloads, or reconciliation internals
+- [x] Add capped, idempotent, audited platform/brand Victory Point funding from
+      the web super-admin dashboard without granting a personal wallet balance
 - [x] Add a super-admin-only PayMongo top-up reconciliation view with provider,
       ledger, audit, mismatch, stale-order, and manual-review signals
 - [x] Add fail-closed environment/platform feature flags for Wallet entry,

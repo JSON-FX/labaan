@@ -1367,6 +1367,35 @@ class SupabaseAdminEconomyRepo implements AdminEconomyRepo {
       throw StateError('Wallet adjustment failed');
     }
   }
+
+  @override
+  Future<void> allocateRewardFunding({
+    required String tournamentId,
+    required bool brandSponsored,
+    required String fundingReference,
+    String? attributionName,
+    required int amount,
+    required int sourceCap,
+    required String reason,
+  }) async {
+    final response = await _client.functions.invoke(
+      'admin-reward-funding',
+      body: {
+        'tournamentId': tournamentId,
+        'fundingSource': brandSponsored
+            ? 'brand_sponsor'
+            : 'platform_promotion',
+        'fundingReference': fundingReference,
+        'attributionName': attributionName,
+        'rewardPointAmount': amount,
+        'sourceCap': sourceCap,
+        'reason': reason,
+      },
+    );
+    if (response.status < 200 || response.status >= 300) {
+      throw StateError('Reward funding allocation failed');
+    }
+  }
 }
 
 class SupabaseWalletRepo implements WalletRepo {

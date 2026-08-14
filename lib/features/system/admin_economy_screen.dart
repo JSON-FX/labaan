@@ -178,6 +178,153 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
     reason.dispose();
   }
 
+  Future<void> _allocateRewardFunding(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final tournament = TextEditingController();
+    final reference = TextEditingController();
+    final attribution = TextEditingController();
+    final amount = TextEditingController();
+    final cap = TextEditingController();
+    final reason = TextEditingController();
+    var brandSponsored = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Allocate reward funding'),
+          content: SizedBox(
+            width: 500,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<bool>(
+                    initialValue: brandSponsored,
+                    decoration: const InputDecoration(labelText: 'Source'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: false,
+                        child: Text('Platform promotion'),
+                      ),
+                      DropdownMenuItem(
+                        value: true,
+                        child: Text('Named brand sponsor'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => brandSponsored = value ?? false),
+                  ),
+                  TextField(
+                    controller: tournament,
+                    decoration: const InputDecoration(
+                      labelText: 'Tournament UUID',
+                    ),
+                  ),
+                  TextField(
+                    controller: reference,
+                    decoration: const InputDecoration(
+                      labelText: 'Unique campaign reference',
+                    ),
+                  ),
+                  if (brandSponsored)
+                    TextField(
+                      controller: attribution,
+                      decoration: const InputDecoration(
+                        labelText: 'Public sponsor name',
+                      ),
+                    ),
+                  TextField(
+                    controller: amount,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Victory Point amount',
+                    ),
+                  ),
+                  TextField(
+                    controller: cap,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Campaign/source cap',
+                    ),
+                  ),
+                  TextField(
+                    controller: reason,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Required audit reason',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('ALLOCATE'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final parsedAmount = int.tryParse(amount.text);
+    final parsedCap = int.tryParse(cap.text);
+    final valid =
+        confirmed == true &&
+        tournament.text.trim().isNotEmpty &&
+        reference.text.trim().length >= 3 &&
+        parsedAmount != null &&
+        parsedAmount > 0 &&
+        parsedCap != null &&
+        parsedCap >= parsedAmount &&
+        reason.text.trim().length >= 10 &&
+        (!brandSponsored || attribution.text.trim().length >= 2);
+    if (valid && context.mounted) {
+      try {
+        await ref
+            .read(adminEconomyRepoProvider)
+            .allocateRewardFunding(
+              tournamentId: tournament.text.trim(),
+              brandSponsored: brandSponsored,
+              fundingReference: reference.text.trim(),
+              attributionName: brandSponsored ? attribution.text.trim() : null,
+              amount: parsedAmount!,
+              sourceCap: parsedCap!,
+              reason: reason.text.trim(),
+            );
+        ref.invalidate(adminEconomyDashboardProvider);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reward funding allocated.')),
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Reward funding was not allocated.')),
+          );
+        }
+      }
+    }
+    for (final controller in [
+      tournament,
+      reference,
+      attribution,
+      amount,
+      cap,
+      reason,
+    ]) {
+      controller.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboard = ref.watch(adminEconomyDashboardProvider);
@@ -196,10 +343,24 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
         ],
       ),
       floatingActionButton: kIsWeb
-          ? FloatingActionButton.extended(
-              onPressed: () => _adjustWallet(context, ref),
-              label: const Text('ADJUST WALLET'),
-              icon: const Icon(Icons.tune),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'reward-funding',
+                  onPressed: () => _allocateRewardFunding(context, ref),
+                  label: const Text('FUND REWARDS'),
+                  icon: const Icon(Icons.campaign_outlined),
+                ),
+                const SizedBox(height: 10),
+                FloatingActionButton.extended(
+                  heroTag: 'wallet-adjustment',
+                  onPressed: () => _adjustWallet(context, ref),
+                  label: const Text('ADJUST WALLET'),
+                  icon: const Icon(Icons.tune),
+                ),
+              ],
             )
           : null,
       body: !kIsWeb

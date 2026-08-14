@@ -266,6 +266,16 @@ abstract class AdminEconomyRepo {
     required String reason,
     required String idempotencyKey,
   });
+
+  Future<void> allocateRewardFunding({
+    required String tournamentId,
+    required bool brandSponsored,
+    required String fundingReference,
+    String? attributionName,
+    required int amount,
+    required int sourceCap,
+    required String reason,
+  });
 }
 
 /// Web-only organizer sponsorship catalog and PayMongo checkout commands.

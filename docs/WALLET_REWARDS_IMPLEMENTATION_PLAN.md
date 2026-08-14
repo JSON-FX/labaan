@@ -143,9 +143,12 @@ Streamer -> Host web portal -> PayMongo -> Labaan
 
 ### C. Platform or brand sponsorship
 
-- [ ] Allow an audited admin workflow to allocate a promotional reward budget.
-- [ ] Store sponsor identity, campaign reference, funding source, and cap.
-- [ ] Keep promotional awards distinguishable in the ledger and reporting.
+- [x] Allow an audited super-admin workflow to allocate a promotional reward
+      budget to an eligible tournament without crediting a personal wallet.
+- [x] Store named-brand attribution, unique campaign reference, funding source,
+      amount, cap, and audit reason.
+- [x] Keep platform/brand promotional funding distinguishable through immutable
+      allocation sources, locked pool snapshots, and reporting.
 
 ### Prize distribution
 
