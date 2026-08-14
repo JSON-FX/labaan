@@ -424,6 +424,9 @@ fulfillment is auditable, and refunding creates a compensating ledger entry.
         and sponsor reconciliation, reward/Shop drift, currency liability, and
         daily wallet flows; redemption-cost inputs and operator UI remain.
 - [x] Roll out behind environment and platform feature flags.
+- [x] Preserve and pseudonymize Wallet, provider, sponsor, reward, Shop, and
+      adjustment records during account deletion; pause unsettled work for
+      review and freeze retained balances without rewriting the ledger.
 - [ ] Complete local, hosted development, PayMongo test, StoreKit sandbox,
       TestFlight, and physical-device pilots.
 - [ ] Migrate new tournaments to the wallet economy.
