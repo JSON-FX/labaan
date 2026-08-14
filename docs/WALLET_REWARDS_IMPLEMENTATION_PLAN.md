@@ -351,7 +351,8 @@ roster and verified result.
 - [x] Reuse the Flutter in-app checkout and native-wallet fallback on direct
       Android; add web checkout behavior.
 - [x] Refresh the wallet after redirect without trusting redirect status.
-- [ ] Add reconciliation and audit views for admins.
+- [x] Add a super-admin-only, payload-free reconciliation and audit view that
+      compares top-up orders, provider processing, and ledger movements.
 
 Exit criteria: one PayMongo test payment creates exactly one Credit grant even
 under duplicate delivery, and refund/reversal behavior is proven.
