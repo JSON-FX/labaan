@@ -369,7 +369,8 @@ under duplicate delivery, and refund/reversal behavior is proven.
       tournament-bound allocation without crediting the organizer wallet.
 - [x] Combine entry-scaled, organizer, platform, and brand allocations without
       exceeding configured caps.
-- [ ] Implement cancellation refund/Host Credit rules.
+- [x] Implement cancellation refund/Host Credit rules (original-method refund
+      for MVP; restricted Host Credit remains deferred).
 - [ ] Display sponsor attribution and final locked pool to players.
 
 Exit criteria: a streamer can fund a fixed boost without receiving spendable

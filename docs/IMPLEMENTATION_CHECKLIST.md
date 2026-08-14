@@ -156,5 +156,7 @@ development environment, not merely drawn as screens.
       settle exactly one immutable tournament allocation with no wallet credit
 - [x] Lock entry-scaled, organizer, platform, and brand reward sources into one
       exact, capped final tournament pool
+- [x] Add pre-lock sponsor cancellation with durable full PayMongo refund
+      requests, signed lifecycle settlement, and manual-review fallbacks
 - [ ] Add Apple IAP purchase and server verification for iOS Credits
 - [ ] Add tournament Victory Point rewards and Shop spending
