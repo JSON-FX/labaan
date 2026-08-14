@@ -810,13 +810,23 @@ class LbAdminEconomyDashboard {
     required this.summary,
     required this.actionCounts,
     required this.actionItems,
+    required this.fundableTournaments,
     required this.riskCases,
   });
 
   final Map<String, num> summary;
   final Map<String, int> actionCounts;
   final List<LbEconomyActionItem> actionItems;
+  final List<LbAdminTournamentOption> fundableTournaments;
   final List<LbEconomyRiskCase> riskCases;
+}
+
+@immutable
+class LbAdminTournamentOption {
+  const LbAdminTournamentOption({required this.id, required this.title});
+
+  final String id;
+  final String title;
 }
 
 @immutable

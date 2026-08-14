@@ -1223,6 +1223,13 @@ class SupabaseAdminEconomyRepo implements AdminEconomyRepo {
       'shop_order_id, user_id, order_status, reconciliation_state, '
           'total_reward_points, updated_at',
     );
+    final fundableRows = await _client
+        .from('tournaments')
+        .select('id, title')
+        .eq('economy_mode', 'wallet_v2')
+        .eq('status', 'draft')
+        .order('created_at', ascending: false)
+        .limit(100);
     final riskRows = await _client
         .from('economy_risk_cases')
         .select(
@@ -1280,6 +1287,13 @@ class SupabaseAdminEconomyRepo implements AdminEconomyRepo {
             idKey: 'shop_order_id',
             statusKey: 'order_status',
             amountKey: 'total_reward_points',
+          ),
+      ],
+      fundableTournaments: [
+        for (final row in fundableRows)
+          LbAdminTournamentOption(
+            id: row['id'] as String,
+            title: row['title'] as String,
           ),
       ],
       riskCases: [

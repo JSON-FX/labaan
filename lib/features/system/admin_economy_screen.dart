@@ -181,8 +181,9 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
   Future<void> _allocateRewardFunding(
     BuildContext context,
     WidgetRef ref,
+    List<LbAdminTournamentOption> tournaments,
   ) async {
-    final tournament = TextEditingController();
+    String? tournamentId = tournaments.isEmpty ? null : tournaments.first.id;
     final reference = TextEditingController();
     final attribution = TextEditingController();
     final amount = TextEditingController();
@@ -216,11 +217,18 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
                     onChanged: (value) =>
                         setDialogState(() => brandSponsored = value ?? false),
                   ),
-                  TextField(
-                    controller: tournament,
-                    decoration: const InputDecoration(
-                      labelText: 'Tournament UUID',
-                    ),
+                  DropdownButtonFormField<String>(
+                    initialValue: tournamentId,
+                    decoration: const InputDecoration(labelText: 'Tournament'),
+                    items: [
+                      for (final tournament in tournaments)
+                        DropdownMenuItem(
+                          value: tournament.id,
+                          child: Text(tournament.title),
+                        ),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => tournamentId = value),
                   ),
                   TextField(
                     controller: reference,
@@ -278,7 +286,7 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
     final parsedCap = int.tryParse(cap.text);
     final valid =
         confirmed == true &&
-        tournament.text.trim().isNotEmpty &&
+        tournamentId != null &&
         reference.text.trim().length >= 3 &&
         parsedAmount != null &&
         parsedAmount > 0 &&
@@ -291,7 +299,7 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
         await ref
             .read(adminEconomyRepoProvider)
             .allocateRewardFunding(
-              tournamentId: tournament.text.trim(),
+              tournamentId: tournamentId!,
               brandSponsored: brandSponsored,
               fundingReference: reference.text.trim(),
               attributionName: brandSponsored ? attribution.text.trim() : null,
@@ -313,14 +321,7 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
         }
       }
     }
-    for (final controller in [
-      tournament,
-      reference,
-      attribution,
-      amount,
-      cap,
-      reason,
-    ]) {
+    for (final controller in [reference, attribution, amount, cap, reason]) {
       controller.dispose();
     }
   }
@@ -375,6 +376,9 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
   @override
   Widget build(BuildContext context) {
     final dashboard = ref.watch(adminEconomyDashboardProvider);
+    final fundableTournaments =
+        dashboard.asData?.value.fundableTournaments ??
+        const <LbAdminTournamentOption>[];
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -396,7 +400,13 @@ class _AdminEconomyScreenState extends ConsumerState<AdminEconomyScreen> {
               children: [
                 FloatingActionButton.extended(
                   heroTag: 'reward-funding',
-                  onPressed: () => _allocateRewardFunding(context, ref),
+                  onPressed: fundableTournaments.isEmpty
+                      ? null
+                      : () => _allocateRewardFunding(
+                          context,
+                          ref,
+                          fundableTournaments,
+                        ),
                   label: const Text('FUND REWARDS'),
                   icon: const Icon(Icons.campaign_outlined),
                 ),

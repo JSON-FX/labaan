@@ -765,6 +765,7 @@ class MockAdminEconomyRepo implements AdminEconomyRepo {
         },
         actionCounts: {'topups': 0, 'sponsors': 0, 'rewards': 0, 'shop': 0},
         actionItems: [],
+        fundableTournaments: [],
         riskCases: [],
       );
 
