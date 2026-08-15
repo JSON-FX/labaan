@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
+import '../../core/data/repos.dart';
 import '../../core/domain/tournament_tier.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';

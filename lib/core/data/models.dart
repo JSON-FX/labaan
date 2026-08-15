@@ -372,7 +372,7 @@ enum LbMatchStatus {
   completed,
 }
 
-enum PayMethod { gcash, maya, card }
+enum PayMethod { gcash, maya, qrph, card }
 
 enum PaymentStatus { pending, succeeded, failed, refunded }
 

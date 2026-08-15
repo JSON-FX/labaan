@@ -293,6 +293,7 @@ class _PackCard extends StatelessWidget {
 String _methodLabel(PayMethod method) => switch (method) {
   PayMethod.gcash => 'GCash',
   PayMethod.maya => 'Maya',
+  PayMethod.qrph => 'QR Ph',
   PayMethod.card => 'Card',
 };
 

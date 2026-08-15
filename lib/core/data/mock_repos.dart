@@ -484,6 +484,7 @@ class MockRegistrationRepo implements RegistrationRepo {
     final status = switch (method) {
       PayMethod.gcash => RegistrationPaymentStatus.paid,
       PayMethod.maya => RegistrationPaymentStatus.pending,
+      PayMethod.qrph => RegistrationPaymentStatus.paid,
       PayMethod.card => RegistrationPaymentStatus.failed,
     };
     return RegistrationCheckout(
