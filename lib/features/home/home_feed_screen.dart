@@ -110,13 +110,7 @@ class _HomeBody extends StatelessWidget {
         const SizedBox(height: 10),
         const _QuickActions(),
         const SizedBox(height: 18),
-        SectionLabel(
-          'Trending in Manila',
-          trailing: Text(
-            'MLBB · VAL · TEKKEN',
-            style: LbType.metaSm.copyWith(color: LbColors.textDim),
-          ),
-        ),
+        const SectionLabel('Trending in Manila'),
         const SizedBox(height: 10),
         if (data.trending.isEmpty)
           const _EmptyRow(hint: 'No trending tournaments right now.')
