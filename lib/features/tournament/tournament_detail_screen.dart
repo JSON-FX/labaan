@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/data/models.dart';
 import '../../core/data/providers.dart';
+import '../../core/domain/tournament_status.dart';
 import '../../core/domain/tournament_tier.dart';
 import '../../core/links/tournament_link_service.dart';
 import '../../core/theme/colors.dart';
@@ -188,7 +189,8 @@ class TournamentDetailScreen extends ConsumerWidget {
               bottom: 0,
               child: _RegisterCta(
                 tournament: t,
-                onPressed: () => context.push('/register/${t.id}'),
+                onRegister: () => context.push('/register/${t.id}'),
+                onBracket: () => context.push('/bracket/${t.id}'),
               ),
             ),
           ],
@@ -630,12 +632,29 @@ class _MiniBracket extends StatelessWidget {
 }
 
 class _RegisterCta extends StatelessWidget {
-  const _RegisterCta({required this.tournament, required this.onPressed});
+  const _RegisterCta({
+    required this.tournament,
+    required this.onRegister,
+    required this.onBracket,
+  });
+
   final LbTournament tournament;
-  final VoidCallback onPressed;
+  final VoidCallback onRegister;
+  final VoidCallback onBracket;
 
   @override
   Widget build(BuildContext context) {
+    final showBracket = switch (tournament.status) {
+      TournamentStatus.locked ||
+      TournamentStatus.live ||
+      TournamentStatus.completed => true,
+      _ => false,
+    };
+    final registrationOpen = switch (tournament.status) {
+      TournamentStatus.open || TournamentStatus.fillingUp => true,
+      _ => false,
+    };
+
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -656,10 +675,20 @@ class _RegisterCta extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: SlantButton(
-              label: 'Register ›',
-              onPressed: onPressed,
+              label: showBracket
+                  ? 'View bracket ›'
+                  : registrationOpen
+                  ? 'Register ›'
+                  : 'Registration unavailable',
+              onPressed: showBracket
+                  ? onBracket
+                  : registrationOpen
+                  ? onRegister
+                  : null,
               trailing: Text(
-                tournament.usesWallet
+                showBracket
+                    ? tournament.status.displayName.toUpperCase()
+                    : tournament.usesWallet
                     ? '${tournament.entryCreditCost ?? 0} CR'
                     : formatPeso(tournament.entryFeePhp, decimals: 0),
                 style: LbType.button.copyWith(color: LbColors.limeInk),
